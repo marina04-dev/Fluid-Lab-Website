@@ -1,9 +1,8 @@
-// client/src/App.jsx - με i18n support
+// client/src/App.jsx - UPDATED με i18n integration
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ContentProvider } from "./contexts/ContentContext";
-import { LanguageProvider } from "./contexts/LanguageContext";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
@@ -23,159 +22,133 @@ import ErrorBoundary from "./components/common/ErrorBoundary";
 import BackButton from "./components/common/BackButton";
 import { Toaster } from "react-hot-toast";
 
+// Import i18n configuration
+import "./i18n";
+
 function App() {
   return (
     <ErrorBoundary>
-      <LanguageProvider>
-        <AuthProvider>
-          <ContentProvider>
-            <Router>
-              <div className="min-h-screen bg-gray-50 flex flex-col">
-                <ScrollToTop />
-                <Navbar />
+      <AuthProvider>
+        <ContentProvider>
+          <Router>
+            {/* Χωρίς global background - κάθε page θα έχει το δικό της */}
+            <div className="min-h-screen flex flex-col">
+              <ScrollToTop />
+              <Navbar />
 
-                <main className="flex-grow">
-                  <Routes>
-                    {/* Public Routes */}
-                    <Route path="/" element={<Home />} />
-                    <Route
-                      path="/about"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <About />
-                        </div>
-                      }
-                    />
-                    <Route
-                      path="/team"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <Team />
-                        </div>
-                      }
-                    />
-                    <Route
-                      path="/projects"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <Projects />
-                        </div>
-                      }
-                    />
-                    <Route
-                      path="/projects/:id"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <ProjectDetail />
-                        </div>
-                      }
-                    />
-                    <Route
-                      path="/publications"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <Publications />
-                        </div>
-                      }
-                    />
-                    <Route
-                      path="/publications/:id"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <PublicationDetail />
-                        </div>
-                      }
-                    />
-                    <Route
-                      path="/contact"
-                      element={
-                        <div className="pt-20">
-                          <div className="container-custom py-8">
-                            <BackButton />
-                          </div>
-                          <Contact />
-                        </div>
-                      }
-                    />
+              <main className="flex-grow">
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Home />} />
 
-                    {/* Admin Routes */}
-                    <Route path="/admin/login" element={<Login />} />
-                    <Route
-                      path="/admin/*"
-                      element={
-                        <ProtectedRoute requiredRole="editor">
+                  {/* Other pages με λευκό background που αρχίζει από κάτω από το navbar */}
+                  <Route
+                    path="/about"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <About />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/team"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <Team />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/projects"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <Projects />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/projects/:id"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <ProjectDetail />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/publications"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <Publications />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/publications/:id"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <PublicationDetail />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/contact"
+                    element={
+                      <div className="pt-16 bg-gray-50 min-h-screen">
+                        <Contact />
+                      </div>
+                    }
+                  />
+
+                  {/* Admin Routes με διαφορετικό styling */}
+                  <Route path="/admin/login" element={<Login />} />
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute>
+                        <div className="pt-16 bg-gray-100 min-h-screen">
                           <AdminDashboard />
-                        </ProtectedRoute>
-                      }
-                    />
-
-                    {/* 404 Route */}
-                    <Route
-                      path="*"
-                      element={
-                        <div className="min-h-screen flex items-center justify-center">
-                          <div className="text-center">
-                            <h1 className="text-6xl font-bold text-gray-900 mb-4">
-                              404
-                            </h1>
-                            <p className="text-xl text-gray-600 mb-8">
-                              Page not found
-                            </p>
-                            <BackButton />
-                          </div>
                         </div>
-                      }
-                    />
-                  </Routes>
-                </main>
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </main>
 
-                <Footer />
+              {/* Footer δεν εμφανίζεται στα admin pages */}
+              <Routes>
+                <Route path="/admin/*" element={null} />
+                <Route path="*" element={<Footer />} />
+              </Routes>
 
-                {/* Toast notifications */}
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
+              {/* Toast notifications */}
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: "#363636",
+                    color: "#fff",
+                  },
+                  success: {
+                    duration: 3000,
+                    iconTheme: {
+                      primary: "#4ade80",
+                      secondary: "#fff",
+                    },
+                  },
+                  error: {
                     duration: 4000,
-                    style: {
-                      background: "#363636",
-                      color: "#fff",
-                      fontSize: "14px",
+                    iconTheme: {
+                      primary: "#ef4444",
+                      secondary: "#fff",
                     },
-                    success: {
-                      style: {
-                        background: "#10B981",
-                      },
-                    },
-                    error: {
-                      style: {
-                        background: "#EF4444",
-                      },
-                    },
-                  }}
-                />
-              </div>
-            </Router>
-          </ContentProvider>
-        </AuthProvider>
-      </LanguageProvider>
+                  },
+                }}
+              />
+            </div>
+          </Router>
+        </ContentProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

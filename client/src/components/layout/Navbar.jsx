@@ -1,26 +1,34 @@
-// client/src/components/layout/Navbar.jsx
+// client/src/components/layout/Navbar.jsx - UPDATED με react-i18next
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
-import { useLanguage } from "../../contexts/LanguageContext";
-import LanguageSwitcher from "../common/LanguageSwitcher";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
 
-  // Handle scroll effect
+  // Determine if we're on homepage and should use transparent navbar initially
+  const isHomePage = location.pathname === "/";
+  const isAdminPage = location.pathname.startsWith("/admin");
+
+  // Handle scroll effect - only relevant for homepage
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    if (isHomePage) {
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    } else {
+      // For non-home pages, navbar should always be "scrolled" (solid)
+      setIsScrolled(true);
+    }
+  }, [isHomePage]);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -43,25 +51,81 @@ const Navbar = () => {
     return location.pathname.startsWith(path);
   };
 
+  // Language switcher function
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "el" : "en";
+    i18n.changeLanguage(newLang);
+  };
+
+  const getCurrentLanguageLabel = () => {
+    return i18n.language === "en" ? "EN" : "GR Ελληνικά";
+  };
+
+  // Determine navbar appearance
+  const shouldBeTransparent = isHomePage && !isScrolled;
+  const navbarBg = shouldBeTransparent
+    ? "bg-transparent"
+    : "bg-white/95 backdrop-blur-md shadow-lg";
+
+  const textColor = shouldBeTransparent ? "text-white" : "text-gray-700";
+  const hoverColor = shouldBeTransparent
+    ? "hover:text-blue-200"
+    : "hover:text-blue-600";
+
+  // Special styling for admin pages
+  if (isAdminPage) {
+    return (
+      <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md shadow-lg">
+        <div className="container-custom">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo for admin */}
+            <Link
+              to="/"
+              className="flex items-center space-x-2 text-xl font-bold text-gray-900"
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">FL</span>
+              </div>
+              <span>Fluid Lab Admin</span>
+            </Link>
+
+            {/* Admin Actions */}
+            <div className="flex items-center space-x-4">
+              {user && (
+                <>
+                  <span className="text-sm text-gray-600">
+                    Welcome, {user.username}
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="text-sm font-medium text-gray-700 hover:text-red-600 transition-colors duration-200"
+                  >
+                    {t("nav.logout")}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/95 backdrop-blur-md shadow-lg" : "bg-transparent"
-      }`}
+      className={`fixed w-full z-50 transition-all duration-300 ${navbarBg}`}
     >
       <div className="container-custom">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center space-x-2 text-xl font-bold text-gray-900"
+            className={`flex items-center space-x-2 text-xl font-bold transition-colors duration-200 ${textColor}`}
           >
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">FL</span>
             </div>
-            <span className={isScrolled ? "text-gray-900" : "text-white"}>
-              Fluid Lab
-            </span>
+            <span>Fluid Lab</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -70,12 +134,10 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`text-sm font-medium transition-colors duration-200 hover:text-blue-600 ${
+                className={`text-sm font-medium transition-colors duration-200 ${
                   isActivePath(item.href)
                     ? "text-blue-600"
-                    : isScrolled
-                    ? "text-gray-700"
-                    : "text-white"
+                    : `${textColor} ${hoverColor}`
                 }`}
               >
                 {item.name}
@@ -83,17 +145,31 @@ const Navbar = () => {
             ))}
 
             {/* Language Switcher */}
-            <div className={`${isScrolled ? "text-gray-700" : "text-white"}`}>
-              <LanguageSwitcher variant="toggle" />
-            </div>
+            <button
+              onClick={toggleLanguage}
+              className={`inline-flex items-center px-3 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${textColor} ${hoverColor} border border-current border-opacity-20 hover:border-opacity-40`}
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                />
+              </svg>
+              {getCurrentLanguageLabel()}
+            </button>
 
             {/* Admin Link - Only show for authenticated users */}
             {user && (
               <div className="relative group">
                 <button
-                  className={`text-sm font-medium transition-colors duration-200 ${
-                    isScrolled ? "text-gray-700" : "text-white"
-                  }`}
+                  className={`text-sm font-medium transition-colors duration-200 ${textColor}`}
                 >
                   {t("nav.admin")}
                 </button>
@@ -118,16 +194,19 @@ const Navbar = () => {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
             {/* Mobile Language Switcher */}
-            <div className={`${isScrolled ? "text-gray-700" : "text-white"}`}>
-              <LanguageSwitcher variant="toggle" className="p-1" />
-            </div>
+            <button
+              onClick={toggleLanguage}
+              className={`p-2 rounded-lg transition-colors duration-200 ${textColor} ${
+                shouldBeTransparent ? "hover:bg-white/10" : "hover:bg-gray-100"
+              }`}
+            >
+              <span className="text-xs">{i18n.language.toUpperCase()}</span>
+            </button>
 
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`p-2 rounded-lg transition-colors duration-200 ${
-                isScrolled
-                  ? "text-gray-700 hover:bg-gray-100"
-                  : "text-white hover:bg-white/10"
+              className={`p-2 rounded-lg transition-colors duration-200 ${textColor} ${
+                shouldBeTransparent ? "hover:bg-white/10" : "hover:bg-gray-100"
               }`}
             >
               <svg

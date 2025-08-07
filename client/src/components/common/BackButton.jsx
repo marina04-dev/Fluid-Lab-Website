@@ -1,4 +1,4 @@
-// client/src/components/common/BackButton.jsx
+// client/src/components/common/BackButton.jsx - FIXED VERSION
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -9,10 +9,17 @@ const BackButton = ({
   className = "",
   showIcon = true,
   variant = "home", // "home" | "back"
+  onClick = null,
 }) => {
   const navigate = useNavigate();
 
-  const handleGoBack = () => {
+  const handleGoBack = (e) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick();
+      return;
+    }
+
     // Αν υπάρχει history, πήγαινε πίσω, αλλιώς στην αρχική
     if (window.history.length > 1) {
       navigate(-1);
@@ -23,7 +30,8 @@ const BackButton = ({
 
   const baseClasses = `
         inline-flex items-center px-4 py-2 text-sm font-medium 
-        transition-all duration-200 rounded-lg
+        transition-all duration-200 rounded-lg cursor-pointer
+        hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
         ${className}
     `;
 
@@ -31,7 +39,8 @@ const BackButton = ({
     return (
       <button
         onClick={handleGoBack}
-        className={`${baseClasses} text-blue-600 hover:text-blue-700 hover:bg-blue-50`}
+        className={`${baseClasses} text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-blue-200 shadow-sm`}
+        type="button"
       >
         {showIcon && (
           <svg
@@ -54,10 +63,11 @@ const BackButton = ({
     );
   }
 
+  // For "home" variant and custom "to" links, use Link component
   return (
     <Link
       to={to}
-      className={`${baseClasses} text-blue-600 hover:text-blue-700 hover:bg-blue-50`}
+      className={`${baseClasses} text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-blue-200 shadow-sm`}
     >
       {showIcon && (
         <svg

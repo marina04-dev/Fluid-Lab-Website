@@ -1,3 +1,4 @@
+/* client/src/index.css - UPDATED με διορθώσεις */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -56,15 +57,32 @@
   nav a {
     font-size: 1rem;
   }
+
+  /* Ensure all buttons and clickable elements have cursor pointer */
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  /* Disable cursor for disabled elements */
+  button:disabled,
+  [role="button"]:disabled,
+  input:disabled,
+  .cursor-not-allowed {
+    cursor: not-allowed;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg;
+    @apply bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg cursor-pointer;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 text-gray-900 px-8 py-4 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg;
+    @apply bg-gray-200 text-gray-900 px-8 py-4 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg cursor-pointer;
   }
 
   .input-field {
@@ -83,6 +101,12 @@
     @apply py-20 lg:py-28;
   }
 
+  /* Hero/Header styling - full height για homepage */
+  .hero-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
   .gradient-bg {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
@@ -94,18 +118,169 @@
     background-clip: text;
   }
 
-  /* Back Button Component */
+  /* Back Button Component - με καλύτερο styling */
   .back-button {
-    @apply inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200;
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 cursor-pointer hover:bg-blue-50 rounded-lg border border-blue-200;
   }
 
   .back-button svg {
     @apply w-4 h-4 mr-2;
   }
 
+  .back-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+
   /* Admin Login Link Style */
   .admin-login-link {
-    @apply text-xs text-gray-400 hover:text-white transition-colors duration-200 opacity-50 hover:opacity-100;
+    @apply text-xs text-gray-400 hover:text-white transition-colors duration-200 opacity-50 hover:opacity-100 cursor-pointer;
+  }
+
+  /* Navigation links styling */
+  .nav-link {
+    @apply text-sm font-medium transition-all duration-200 cursor-pointer hover:scale-105;
+  }
+
+  .nav-link:hover {
+    text-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  }
+
+  /* Admin panel specific styles */
+  .admin-nav-link {
+    @apply flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer;
+  }
+
+  .admin-nav-link:hover {
+    transform: translateX(2px);
+  }
+
+  .admin-nav-link.active {
+    @apply bg-blue-100 text-blue-700 shadow-sm;
+  }
+
+  .admin-nav-link:not(.active) {
+    @apply text-gray-600 hover:text-gray-900 hover:bg-gray-100;
+  }
+
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Button hover effects */
+  .btn-hover {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  .btn-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Quick action cards */
+  .quick-action-card {
+    @apply flex items-center p-4 rounded-lg transition-all duration-200 cursor-pointer;
+  }
+
+  .quick-action-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Loading spinner */
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-gray-200;
+  }
+
+  .loading-spinner-primary {
+    @apply loading-spinner border-t-blue-600;
+  }
+
+  /* Status indicators */
+  .status-online {
+    @apply flex items-center text-sm text-green-600 font-medium;
+  }
+
+  .status-offline {
+    @apply flex items-center text-sm text-red-600 font-medium;
+  }
+
+  .status-warning {
+    @apply flex items-center text-sm text-yellow-600 font-medium;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-blue {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  .badge-green {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .badge-yellow {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-red {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .badge-gray {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  .badge-purple {
+    @apply bg-purple-100 text-purple-800;
+  }
+
+  .badge-orange {
+    @apply bg-orange-100 text-orange-800;
+  }
+
+  /* Line clamp utility */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .line-clamp-4 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
   }
 }
 
@@ -139,6 +314,46 @@
   .text-body-lg {
     font-size: 1.2rem;
     line-height: 1.6;
+  }
+
+  /* Page specific utilities */
+  .page-container {
+    @apply min-h-screen pt-16;
+  }
+
+  .admin-page-container {
+    @apply min-h-screen pt-16 bg-gray-100;
+  }
+
+  /* Responsive utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Hover utilities */
+  .hover-lift {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+
+  /* Focus utilities */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+
+  .focus-ring-inset {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset;
   }
 }
 
@@ -176,6 +391,26 @@
   }
 }
 
+@keyframes bounceGentle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out forwards;
 }
@@ -186,4 +421,28 @@
 
 .animate-fade-in-right {
   animation: fadeInRight 0.6s ease-out forwards;
+}
+
+.animate-bounce-gentle {
+  animation: bounceGentle 2s infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* Dark mode preparations (για μελλοντική χρήση) */
+@media (prefers-color-scheme: dark) {
+  /* Θα προστεθούν dark mode styles όταν χρειαστεί */
 }

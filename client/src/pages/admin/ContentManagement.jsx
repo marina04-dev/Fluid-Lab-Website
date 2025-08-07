@@ -10,6 +10,7 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 
 const ContentManagement = () => {
+  // get necessary variables/functions from context
   const {
     fetchContent,
     getContent,
@@ -19,11 +20,17 @@ const ContentManagement = () => {
     loading,
     error,
   } = useContent();
+  // state variables to handle edit content modal display
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // state variables to handle add content modal display
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // state variables to handle delete content modal display
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  // state variables to handle edit content
   const [editingContent, setEditingContent] = useState(null);
+  // state variables to handle delete content
   const [deletingContent, setDeletingContent] = useState(null);
+  // state variables to handle edit form
   const [editForm, setEditForm] = useState({
     key: "",
     title: "",
@@ -31,6 +38,7 @@ const ContentManagement = () => {
     type: "text",
     section: "general",
   });
+  // state variables to handle add form
   const [addForm, setAddForm] = useState({
     key: "",
     title: "",
@@ -38,7 +46,9 @@ const ContentManagement = () => {
     type: "text",
     section: "general",
   });
+  // state variables to handle content items
   const [contentItems, setContentItems] = useState([]);
+  // state variables to handle submit status
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Φόρτωση περιεχομένου κατά την εκκίνηση
@@ -46,9 +56,11 @@ const ContentManagement = () => {
     loadContent();
   }, []);
 
+  // TODO: make api call to backend to get database real data
   const loadContent = async () => {
     try {
       await fetchContent();
+      // hard coded data
       // Αφού φορτωθεί το content, δημιουργούμε τη λίστα των items
       const defaultItems = [
         {
@@ -117,6 +129,7 @@ const ContentManagement = () => {
     }
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleEditClick = (item) => {
     setEditingContent(item);
     setEditForm({
@@ -129,11 +142,14 @@ const ContentManagement = () => {
     setIsEditModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleDeleteClick = (item) => {
     setDeletingContent(item);
     setIsDeleteModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle form change
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({
@@ -142,6 +158,8 @@ const ContentManagement = () => {
     }));
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle add form change
   const handleAddFormChange = (e) => {
     const { name, value } = e.target;
     setAddForm((prev) => ({
@@ -150,6 +168,8 @@ const ContentManagement = () => {
     }));
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle save content
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
@@ -176,6 +196,7 @@ const ContentManagement = () => {
     }
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleAddContent = async () => {
     setIsSubmitting(true);
     try {

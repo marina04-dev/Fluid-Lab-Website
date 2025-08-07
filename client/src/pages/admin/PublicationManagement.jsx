@@ -8,10 +8,15 @@ import BackButton from "../../components/common/BackButton";
 import toast from "react-hot-toast";
 
 const PublicationManagement = () => {
+  // state variables to handle publications display
   const [publications, setPublications] = useState([]);
+  // state variables to handle add publication modal display
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // state variables to handle edit publication modal display
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // state variables to handle editing publication
   const [editingPublication, setEditingPublication] = useState(null);
+  // state variables to handle form data display
   const [formData, setFormData] = useState({
     title: "",
     authors: "",
@@ -30,6 +35,7 @@ const PublicationManagement = () => {
     isActive: true,
   });
 
+  // hard coded publication types
   const publicationTypes = [
     "journal",
     "conference",
@@ -39,6 +45,7 @@ const PublicationManagement = () => {
     "preprint",
   ];
 
+  // hard coded status options
   const statusOptions = ["published", "accepted", "under-review", "draft"];
 
   // Mock data για demo
@@ -134,14 +141,18 @@ const PublicationManagement = () => {
     setPublications(mockPublications);
   }, []);
 
+  // function to handle form inputs
   const handleFormChange = (e) => {
+    // get the name, value, type, checked from event
     const { name, value, type, checked } = e.target;
+    // provide the data in the setter function
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleAddPublication = () => {
     setFormData({
       title: "",
@@ -163,6 +174,7 @@ const PublicationManagement = () => {
     setIsAddModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleEditPublication = (publication) => {
     setEditingPublication(publication);
     setFormData({
@@ -185,6 +197,7 @@ const PublicationManagement = () => {
     setIsEditModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleSavePublication = () => {
     if (editingPublication) {
       // Update existing publication
@@ -212,6 +225,7 @@ const PublicationManagement = () => {
     setEditingPublication(null);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleDeletePublication = (id) => {
     if (window.confirm("Are you sure you want to delete this publication?")) {
       setPublications((prev) =>
@@ -221,6 +235,7 @@ const PublicationManagement = () => {
     }
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleToggleFeatured = (id) => {
     setPublications((prev) =>
       prev.map((publication) =>
@@ -232,6 +247,7 @@ const PublicationManagement = () => {
     toast.success("Featured status updated!");
   };
 
+  // publication status color
   const getStatusColor = (status) => {
     switch (status) {
       case "published":
@@ -247,6 +263,7 @@ const PublicationManagement = () => {
     }
   };
 
+  // publication type color
   const getPublicationTypeColor = (type) => {
     switch (type) {
       case "journal":

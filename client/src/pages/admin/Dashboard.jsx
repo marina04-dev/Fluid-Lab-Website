@@ -13,10 +13,14 @@ import PublicationManagement from "./PublicationManagement";
 import MessageManagement from "./MessageManagement";
 
 const Dashboard = () => {
+  // get the user from AuthContext
   const { user } = useAuth();
+  // get necessary variables/functions from context
   const { content, team, projects, publications, loading } = useContent();
+  // use path location
   const location = useLocation();
 
+  // navigation menus
   const navigation = [
     {
       name: "Overview",
@@ -56,6 +60,7 @@ const Dashboard = () => {
     },
   ];
 
+  // function to get the active path
   const isActivePath = (path) => {
     if (path === "/admin") {
       return location.pathname === "/admin";

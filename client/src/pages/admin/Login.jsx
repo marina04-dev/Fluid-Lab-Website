@@ -8,16 +8,19 @@ import Card from "../../components/common/Card";
 import toast from "react-hot-toast";
 
 const Login = () => {
-  // ✅ ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
+  // get necessary variables/functions from AuthContext
   const { user, login, loading, error, clearError } = useAuth();
+  // use the path location
   const location = useLocation();
+  // state variables to handle form data
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  // state variables to handle login loading
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // ✅ useEffect HOOKS ALSO AT THE TOP
+  // toast notifications if an error occurs
   useEffect(() => {
     if (error) {
       toast.error(error);
@@ -45,21 +48,28 @@ const Login = () => {
     return <Navigate to={from} replace />;
   }
 
-  // ✅ EVENT HANDLERS AFTER HOOKS AND CONDITIONAL RETURNS
+  // function to handle inputs changes
   const handleChange = (e) => {
+    // get the name and the value from the event
     const { name, value } = e.target;
+    // provide the data in the setter function
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  // function to handle form submission
   const handleSubmit = async (e) => {
+    // prevent default browser's behaviour from reloading the page
     e.preventDefault();
+    // begin to load login
     setLoginLoading(true);
 
     try {
+      // make the api call to login
       const result = await login(formData.email, formData.password);
+      // check response's status
       if (result.success) {
         toast.success("Login successful!");
       } else {
@@ -68,6 +78,7 @@ const Login = () => {
     } catch (err) {
       toast.error("An unexpected error occurred");
     } finally {
+      // terminate the login loading
       setLoginLoading(false);
     }
   };

@@ -7,12 +7,19 @@ import BackButton from "../../components/common/BackButton";
 import toast from "react-hot-toast";
 
 const MessageManagement = () => {
+  // state variables to handle messages display
   const [messages, setMessages] = useState([]);
+  // state variables to selected message display
   const [selectedMessage, setSelectedMessage] = useState(null);
+  // state variables to handle view message modal display
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  // state variables to handle reply message modal display
   const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+  // state variables to handle reply text
   const [replyText, setReplyText] = useState("");
+  // state variables to handle status filter
   const [filterStatus, setFilterStatus] = useState("all");
+  // state variables to handle search term
   const [searchTerm, setSearchTerm] = useState("");
 
   // Mock data για demo
@@ -97,6 +104,7 @@ const MessageManagement = () => {
     setMessages(mockMessages);
   }, []);
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleViewMessage = (message) => {
     setSelectedMessage(message);
     setIsViewModalOpen(true);
@@ -111,6 +119,7 @@ const MessageManagement = () => {
     }
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleReplyMessage = (message) => {
     setSelectedMessage(message);
     setReplyText(
@@ -123,6 +132,7 @@ const MessageManagement = () => {
     setIsReplyModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleSendReply = () => {
     // Update message status to replied
     setMessages((prev) =>
@@ -138,6 +148,7 @@ const MessageManagement = () => {
     setSelectedMessage(null);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleDeleteMessage = (id) => {
     if (window.confirm("Are you sure you want to delete this message?")) {
       setMessages((prev) => prev.filter((message) => message.id !== id));
@@ -145,6 +156,7 @@ const MessageManagement = () => {
     }
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleMarkAsRead = (id) => {
     setMessages((prev) =>
       prev.map((msg) => (msg.id === id ? { ...msg, status: "read" } : msg))
@@ -152,6 +164,7 @@ const MessageManagement = () => {
     toast.success("Message marked as read!");
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleMarkAsUnread = (id) => {
     setMessages((prev) =>
       prev.map((msg) => (msg.id === id ? { ...msg, status: "unread" } : msg))
@@ -159,6 +172,7 @@ const MessageManagement = () => {
     toast.success("Message marked as unread!");
   };
 
+  // filter the messages based on the search terms
   const filteredMessages = messages.filter((message) => {
     const matchesStatus =
       filterStatus === "all" || message.status === filterStatus;
@@ -172,6 +186,7 @@ const MessageManagement = () => {
     return matchesStatus && matchesSearch;
   });
 
+  // message status color
   const getStatusColor = (status) => {
     switch (status) {
       case "unread":
@@ -185,6 +200,7 @@ const MessageManagement = () => {
     }
   };
 
+  // priority status color
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "high":
@@ -198,6 +214,7 @@ const MessageManagement = () => {
     }
   };
 
+  // format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString("en-US", {
       year: "numeric",

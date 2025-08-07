@@ -8,7 +8,9 @@ import Card from "../components/common/Card";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
 const Home = () => {
+  // useTranslation use
   const { t } = useTranslation();
+  // get necessary variables/functions from the context
   const { fetchContent, loading, error } = useContent();
 
   // Φόρτωση περιεχομένου κατά την εκκίνηση
@@ -16,6 +18,7 @@ const Home = () => {
     fetchContent();
   }, [fetchContent]);
 
+  // hard coded services with translation
   const services = [
     {
       title: t("services.research.title"),
@@ -76,6 +79,7 @@ const Home = () => {
     },
   ];
 
+  // if services or home components is slow display loading
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

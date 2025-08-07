@@ -28,6 +28,7 @@ import "./i18n";
 function App() {
   return (
     <ErrorBoundary>
+      {/* Wrap The App Between The Contexts */}
       <AuthProvider>
         <ContentProvider>
           <Router>
@@ -39,9 +40,11 @@ function App() {
               <main className="flex-grow">
                 <Routes>
                   {/* Public Routes */}
+                  {/* Όταν ο χρήστης πάει στο "/" εμφανίζεται η σελίδα Home */}
                   <Route path="/" element={<Home />} />
 
                   {/* Other pages με λευκό background που αρχίζει από κάτω από το navbar */}
+                  {/* Όταν πάει στο "/about" εμφανίζεται η σελίδα About */}
                   <Route
                     path="/about"
                     element={
@@ -50,6 +53,7 @@ function App() {
                       </div>
                     }
                   />
+                  {/* Όταν πάει στο "/team" εμφανίζεται η σελίδα Team */}
                   <Route
                     path="/team"
                     element={
@@ -58,6 +62,7 @@ function App() {
                       </div>
                     }
                   />
+                  {/* Όταν πάει στο "/projects" εμφανίζεται η σελίδα Projects */}
                   <Route
                     path="/projects"
                     element={
@@ -66,6 +71,7 @@ function App() {
                       </div>
                     }
                   />
+                  {/* Όταν πάει στο "/projects/:id" εμφανίζεται η σελίδα ProjectDetail */}
                   <Route
                     path="/projects/:id"
                     element={
@@ -74,6 +80,7 @@ function App() {
                       </div>
                     }
                   />
+                  {/* Όταν πάει στο "/publications" εμφανίζεται η σελίδα Publications */}
                   <Route
                     path="/publications"
                     element={
@@ -82,6 +89,7 @@ function App() {
                       </div>
                     }
                   />
+                  {/* Όταν πάει στο "/publications/:id" εμφανίζεται η σελίδα PublicationDetail */}
                   <Route
                     path="/publications/:id"
                     element={
@@ -90,6 +98,7 @@ function App() {
                       </div>
                     }
                   />
+                  {/* Όταν πάει στο "/contact" εμφανίζεται η σελίδα Contact */}
                   <Route
                     path="/contact"
                     element={
@@ -100,6 +109,7 @@ function App() {
                   />
 
                   {/* Admin Routes με διαφορετικό styling */}
+                  {/* Όταν πάει στο "/admin/login" εμφανίζεται η σελίδα popup Login */}
                   <Route path="/admin/login" element={<Login />} />
                   <Route
                     path="/admin/*"

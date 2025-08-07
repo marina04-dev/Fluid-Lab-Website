@@ -9,30 +9,39 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 
 const Contact = () => {
+  // useTranslation use
   const { t } = useTranslation();
+  // state variables to handle form inputs
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: "",
   });
+  // state variables to handle form submission
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // function to handle inputs changes
   const handleChange = (e) => {
+    // get the name and the value from the event
     const { name, value } = e.target;
+    // provide the data in the setter function
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  // function to handle form submission
   const handleSubmit = async (e) => {
+    // prevent default browser's behaviour from reloading the page
     e.preventDefault();
+    // begin to edit
     setIsSubmitting(true);
 
     try {
       // TODO: Implement API call to send contact message
-      // await api.post('/contact', formData);
+      await api.post("/contact", formData);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -51,6 +60,7 @@ const Contact = () => {
     }
   };
 
+  // hard coded contact info
   const contactInfo = [
     {
       icon: (

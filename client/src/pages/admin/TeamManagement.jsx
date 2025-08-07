@@ -8,10 +8,15 @@ import BackButton from "../../components/common/BackButton";
 import toast from "react-hot-toast";
 
 const TeamManagement = () => {
+  // state variables to handle team members display
   const [teamMembers, setTeamMembers] = useState([]);
+  // state variables to handle add team member modal display
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // state variables to handle edit team member modal display
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // state variables to handle editing team member
   const [editingMember, setEditingMember] = useState(null);
+  // state variables to handle form data display
   const [formData, setFormData] = useState({
     name: "",
     position: "",
@@ -65,14 +70,18 @@ const TeamManagement = () => {
     setTeamMembers(mockMembers);
   }, []);
 
+  // function to handle form inputs
   const handleFormChange = (e) => {
+    // get the name, value, type, checked from event
     const { name, value, type, checked } = e.target;
+    // provide the data in the setter function
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleAddMember = () => {
     setFormData({
       name: "",
@@ -86,6 +95,7 @@ const TeamManagement = () => {
     setIsAddModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleEditMember = (member) => {
     setEditingMember(member);
     setFormData({
@@ -100,6 +110,7 @@ const TeamManagement = () => {
     setIsEditModalOpen(true);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleSaveMember = () => {
     if (editingMember) {
       // Update existing member
@@ -124,6 +135,7 @@ const TeamManagement = () => {
     setEditingMember(null);
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleDeleteMember = (id) => {
     if (window.confirm("Are you sure you want to delete this team member?")) {
       setTeamMembers((prev) => prev.filter((member) => member.id !== id));
@@ -131,6 +143,7 @@ const TeamManagement = () => {
     }
   };
 
+  // TODO: the above functions need to be implemented to do api calls to get real data
   const handleToggleStatus = (id) => {
     setTeamMembers((prev) =>
       prev.map((member) =>

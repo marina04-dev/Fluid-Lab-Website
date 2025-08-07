@@ -5,10 +5,15 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Navbar = () => {
+  // state variables to handle menu display
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // state variables to handle web page scroll
   const [isScrolled, setIsScrolled] = useState(false);
+  // get necessary variables/functions from AuthContext
   const { user, logout } = useAuth();
+  // get necessary variables for translation
   const { t, i18n } = useTranslation();
+  // get path from useLocation
   const location = useLocation();
 
   // Determine if we're on homepage and should use transparent navbar initially
@@ -21,6 +26,7 @@ const Navbar = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
+    // check if it the user is in the home page
     if (isHomePage) {
       window.addEventListener("scroll", handleScroll);
       return () => window.removeEventListener("scroll", handleScroll);
@@ -35,6 +41,7 @@ const Navbar = () => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
+  // navigation paths and translation if needed
   const navigation = [
     { name: t("nav.home"), href: "/" },
     { name: t("nav.about"), href: "/about" },
@@ -44,6 +51,7 @@ const Navbar = () => {
     { name: t("nav.contact"), href: "/contact" },
   ];
 
+  // check the active path
   const isActivePath = (path) => {
     if (path === "/") {
       return location.pathname === "/";
@@ -57,6 +65,7 @@ const Navbar = () => {
     i18n.changeLanguage(newLang);
   };
 
+  // Language label function
   const getCurrentLanguageLabel = () => {
     return i18n.language === "en" ? "EN" : "GR Ελληνικά";
   };

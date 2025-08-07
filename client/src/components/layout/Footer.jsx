@@ -4,8 +4,10 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  // useTranslation for translation
   const { t } = useTranslation();
 
+  // navigation links
   const quickLinks = [
     { name: t("nav.home"), href: "/" },
     { name: t("nav.about"), href: "/about" },
@@ -15,6 +17,7 @@ const Footer = () => {
     { name: t("nav.contact"), href: "/contact" },
   ];
 
+  // semi hard coded research areas
   const researchAreas = [
     { name: t("footer.areas.cfd"), href: "/projects?category=cfd" },
     {

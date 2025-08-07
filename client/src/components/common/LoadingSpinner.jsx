@@ -1,6 +1,6 @@
 // client/src/components/common/LoadingSpinner.jsx
-import React from "react";
-import { useLanguage } from "../../contexts/LanguageContext";
+import React, { useContext } from "react";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const LoadingSpinner = ({
   size = "md",
@@ -9,7 +9,9 @@ const LoadingSpinner = ({
   color = "blue",
   className = "",
 }) => {
-  const { t } = useLanguage();
+  // Safely access language context - it might not be available in all contexts
+  const languageContext = useContext(LanguageContext);
+  const t = languageContext?.t || null;
 
   const sizes = {
     xs: "w-4 h-4",
@@ -33,6 +35,15 @@ const LoadingSpinner = ({
     md: "text-base",
     lg: "text-lg",
     xl: "text-xl",
+  };
+
+  // Handle text display
+  const getDisplayText = () => {
+    if (text === true) {
+      // If text is true and translation function is available, use it
+      return t ? t("common.loading") : "Loading...";
+    }
+    return text;
   };
 
   const spinner = (
@@ -63,7 +74,7 @@ const LoadingSpinner = ({
         <div
           className={`${textSizes[size]} ${colors[color]} font-medium animate-pulse`}
         >
-          {text === true ? t("common.loading") : text}
+          {getDisplayText()}
         </div>
       )}
     </div>

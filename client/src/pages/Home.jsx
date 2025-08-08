@@ -1,234 +1,158 @@
-// client/src/pages/Home.jsx - FIXED με react-i18next
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { useContent } from "../contexts/ContentContext";
-import Button from "../components/common/Button";
-import Card from "../components/common/Card";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import Card from "../components/common/Card";
+import Button from "../components/common/Button";
 
 const Home = () => {
-  // useTranslation use
-  const { t } = useTranslation();
-  // get necessary variables/functions from the context
-  const { fetchContent, loading, error } = useContent();
+  // get necessary variables/functions from contexts
+  const {
+    getContent,
+    fetchContent,
+    projects,
+    fetchProjects,
+    publications,
+    fetchPublications,
+    loading,
+    error,
+    clearError,
+  } = useContent();
 
-  // Φόρτωση περιεχομένου κατά την εκκίνηση
+  // fetch all necessary data on component mount
   useEffect(() => {
-    fetchContent();
-  }, [fetchContent]);
+    const loadData = async () => {
+      await fetchContent();
+      // Fetch featured projects and recent publications
+      await fetchProjects({ isFeatured: true, limit: 3 });
+      await fetchPublications({ limit: 3, sortBy: "year-desc" });
+    };
 
-  // hard coded services with translation
-  const services = [
-    {
-      title: t("services.research.title"),
-      description: t("services.research.description"),
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: t("services.simulation.title"),
-      description: t("services.simulation.description"),
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: t("services.consulting.title"),
-      description: t("services.consulting.description"),
-      icon: (
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      ),
-    },
-  ];
+    loadData();
+  }, [fetchContent, fetchProjects, fetchPublications]);
 
-  // if services or home components is slow display loading
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <LoadingSpinner size="lg" text={t("common.loading")} />
-      </div>
-    );
-  }
+  // Clear any existing errors on component mount
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // function to truncate text for card display
+  const truncateText = (text, maxLength = 120) => {
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
+  // function to format authors for display
+  const formatAuthors = (authors) => {
+    if (!authors) return "";
+    if (Array.isArray(authors)) {
+      return (
+        authors.slice(0, 3).join(", ") + (authors.length > 3 ? " et al." : "")
+      );
+    }
+    return authors;
+  };
+
+  // get featured projects (max 3)
+  const featuredProjects =
+    projects?.filter((p) => p.isFeatured && p.isActive !== false).slice(0, 3) ||
+    [];
+
+  // get recent publications (max 3)
+  const recentPublications = publications?.slice(0, 3) || [];
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section - Full Screen με Navbar μέσα στο gradient background */}
-      <section className="hero-section relative flex items-center justify-center overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
-        </div>
-
-        {/* Hero Content */}
-        <div className="container-custom relative z-10 pt-20">
-          <div className="text-center text-white">
-            <h1 className="text-hero md:text-7xl font-bold mb-8 animate-fade-in-up">
-              {t("hero.title")}
-            </h1>
-            <p className="text-subtitle md:text-2xl mb-10 opacity-90 animate-fade-in-up animation-delay-200">
-              {t("hero.subtitle")}
-            </p>
-            <p className="text-body-lg mb-14 max-w-4xl mx-auto opacity-80 animate-fade-in-up animation-delay-400">
-              {t("hero.description")}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up animation-delay-600">
-              <Link to="/projects">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto text-lg px-8 py-4 btn-hover"
-                >
-                  {t("hero.exploreProjects")}
-                </Button>
-              </Link>
-              <Link to="/contact">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto text-lg px-8 py-4 bg-white text-blue-600 border-2 border-white hover:bg-transparent hover:text-white font-semibold transition-all duration-200 btn-hover"
-                >
-                  {t("hero.getInTouch")}
-                </Button>
-              </Link>
-            </div>
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center gradient-bg overflow-hidden">
+        <div className="container-custom text-center text-white relative z-10">
+          <h1 className="text-6xl font-bold mb-6">
+            {getContent("hero-title", "Advanced Fluid Mechanics Research")}
+          </h1>
+          <p className="text-2xl mb-8 opacity-90">
+            {getContent(
+              "hero-subtitle",
+              "Leading the Future of Fluid Dynamics"
+            )}
+          </p>
+          <p className="text-xl mb-12 max-w-4xl mx-auto opacity-80">
+            {getContent(
+              "hero-description",
+              "Our research team offers efficient research and consulting services in many aspects of Fluid Flow, Hydraulics and Convective Heat Transfer."
+            )}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/projects" className="btn btn-primary btn-lg">
+              {getContent("hero-cta-primary", "Explore Our Research")}
+            </Link>
+            <Link to="/contact" className="btn btn-outline btn-lg">
+              {getContent("hero-cta-secondary", "Get In Touch")}
+            </Link>
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce-gentle">
-          <svg
-            className="w-6 h-6 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
+        {/* Background Animation/Decoration */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white opacity-10 rounded-full"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white opacity-5 rounded-full"></div>
         </div>
       </section>
 
-      {/* Services Section */}
+      {/* Error Display */}
+      {error && (
+        <section className="section-padding">
+          <div className="container-custom">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+              <div className="flex items-center">
+                <div className="text-red-800">
+                  <strong>Error:</strong> {error}
+                </div>
+                <button
+                  onClick={clearError}
+                  className="ml-auto text-red-600 hover:text-red-800"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* About Section */}
       <section className="section-padding bg-white">
         <div className="container-custom">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              {t("services.title")}
-            </h2>
-            <p className="text-subtitle text-gray-600 max-w-4xl mx-auto">
-              {t("services.subtitle")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {services.map((service, index) => (
-              <Card key={index} className="text-center card-hover">
-                <div className="text-blue-600 mb-6 flex justify-center">
-                  {service.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                  {service.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {service.description}
-                </p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About Section Preview */}
-      <section className="section-padding bg-gray-50">
-        <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-in-left">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                {t("about.title")}
+                {getContent("home-about-title", "About Our Laboratory")}
               </h2>
-              <p className="text-body-lg text-gray-600 mb-8 leading-relaxed">
-                {t("about.description")}
-              </p>
-              <Link to="/about">
-                <Button className="btn-hover">{t("common.learnMore")}</Button>
+              <div className="prose prose-lg text-gray-600">
+                <p className="mb-6">
+                  {getContent(
+                    "home-about-description1",
+                    "We are a leading research laboratory specializing in computational fluid dynamics, experimental fluid mechanics, and advanced simulation techniques."
+                  )}
+                </p>
+                <p className="mb-6">
+                  {getContent(
+                    "home-about-description2",
+                    "Our interdisciplinary team combines theoretical knowledge with practical applications to solve complex engineering challenges in various industries."
+                  )}
+                </p>
+              </div>
+              <Link to="/about" className="btn btn-primary">
+                {getContent("home-about-cta", "Learn More About Us")}
               </Link>
             </div>
-            <div className="animate-fade-in-right">
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-                <h3 className="text-2xl font-semibold mb-4">
-                  {t("home.stats.title")}
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <div className="text-3xl font-bold mb-2">15+</div>
-                    <div className="text-sm opacity-90">
-                      {t("home.stats.years")}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold mb-2">50+</div>
-                    <div className="text-sm opacity-90">
-                      {t("home.stats.projects")}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold mb-2">100+</div>
-                    <div className="text-sm opacity-90">
-                      {t("home.stats.publications")}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold mb-2">20+</div>
-                    <div className="text-sm opacity-90">
-                      {t("home.stats.collaborations")}
-                    </div>
-                  </div>
-                </div>
+            <div>
+              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xl font-semibold shadow-lg">
+                {getContent(
+                  "home-about-image-placeholder",
+                  "Laboratory Overview"
+                )}
               </div>
             </div>
           </div>
@@ -236,113 +160,297 @@ const Home = () => {
       </section>
 
       {/* Featured Projects Section */}
+      <section className="section-padding bg-gray-50">
+        <div className="container-custom">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              {getContent(
+                "home-featured-projects-title",
+                "Featured Research Projects"
+              )}
+            </h2>
+            <p className="text-subtitle text-gray-600 max-w-3xl mx-auto">
+              {getContent(
+                "home-featured-projects-subtitle",
+                "Discover our latest research initiatives and breakthrough discoveries"
+              )}
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner size="lg" text="Loading projects..." />
+            </div>
+          ) : featuredProjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {featuredProjects.map((project) => (
+                <Card key={project._id} hover>
+                  {/* Project Image */}
+                  {project.images && project.images.length > 0 ? (
+                    <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 overflow-hidden">
+                      <img
+                        src={project.images[0].url || project.images[0]}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.parentElement.className =
+                            "aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 flex items-center justify-center";
+                          e.target.parentElement.innerHTML =
+                            '<span class="text-white font-semibold">Project Image</span>';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 flex items-center justify-center">
+                      <span className="text-white font-semibold">
+                        Project Image
+                      </span>
+                    </div>
+                  )}
+
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    <Link
+                      to={`/projects/${project._id}`}
+                      className="hover:text-blue-600 transition-colors"
+                    >
+                      {project.title}
+                    </Link>
+                  </h3>
+
+                  <p className="text-gray-600 mb-4">
+                    {truncateText(
+                      project.shortDescription || project.description
+                    )}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {project.status && (
+                      <span className="badge badge-blue">
+                        {project.status.charAt(0).toUpperCase() +
+                          project.status.slice(1)}
+                      </span>
+                    )}
+                    {project.category && (
+                      <span className="badge badge-purple">
+                        {project.category
+                          .replace(/-/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </span>
+                    )}
+                    {project.tags && project.tags.length > 0 && (
+                      <span className="badge badge-green">
+                        {project.tags[0]}
+                      </span>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-6">
+                {getContent(
+                  "home-no-featured-projects",
+                  "Featured projects will be displayed here once available."
+                )}
+              </p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <Link to="/projects" className="btn btn-primary">
+              {getContent("home-view-all-projects", "View All Projects")}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Research Areas Section */}
       <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              {t("home.featuredProjects.title")}
+              {getContent("home-research-areas-title", "Research Areas")}
             </h2>
             <p className="text-subtitle text-gray-600 max-w-3xl mx-auto">
-              {t("home.featuredProjects.subtitle")}
+              {getContent(
+                "home-research-areas-subtitle",
+                "Our expertise spans multiple domains of fluid mechanics and related fields"
+              )}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {/* Project Cards με real data από translations */}
-            <Card className="card-hover">
-              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                {t("home.sampleProject.title1")}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {t("home.sampleProject.description1")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="badge badge-blue">CFD</span>
-                <span className="badge badge-purple">Turbulence</span>
-                <span className="badge badge-green">Research</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card hover>
+              <div className="text-center">
+                <div className="text-4xl mb-4">⚡</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {getContent("home-area1-title", "Magnetohydrodynamics")}
+                </h3>
+                <p className="text-gray-600">
+                  {getContent(
+                    "home-area1-description",
+                    "Advanced study of electrically conducting fluids in magnetic fields"
+                  )}
+                </p>
               </div>
             </Card>
 
-            <Card className="card-hover">
-              <div className="aspect-video bg-gradient-to-br from-green-500 to-blue-600 rounded-lg mb-6"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                {t("home.sampleProject.title2")}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {t("home.sampleProject.description2")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="badge badge-green">Heat Transfer</span>
-                <span className="badge badge-orange">Industry</span>
-                <span className="badge badge-blue">Simulation</span>
+            <Card hover>
+              <div className="text-center">
+                <div className="text-4xl mb-4">🔧</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {getContent("home-area2-title", "Turbomachinery")}
+                </h3>
+                <p className="text-gray-600">
+                  {getContent(
+                    "home-area2-description",
+                    "Optimization of rotating machinery and fluid energy conversion systems"
+                  )}
+                </p>
               </div>
             </Card>
 
-            <Card className="card-hover">
-              <div className="aspect-video bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg mb-6"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                {t("home.sampleProject.title3")}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {t("home.sampleProject.description3")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="badge badge-purple">Bioengineering</span>
-                <span className="badge badge-red">Medical</span>
-                <span className="badge badge-yellow">Innovation</span>
+            <Card hover>
+              <div className="text-center">
+                <div className="text-4xl mb-4">🌡️</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {getContent("home-area3-title", "Heat Transfer")}
+                </h3>
+                <p className="text-gray-600">
+                  {getContent(
+                    "home-area3-description",
+                    "Thermal analysis and heat exchange in complex flow systems"
+                  )}
+                </p>
               </div>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Recent Publications Section */}
+      <section className="section-padding bg-gray-50">
+        <div className="container-custom">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              {getContent(
+                "home-recent-publications-title",
+                "Recent Publications"
+              )}
+            </h2>
+            <p className="text-subtitle text-gray-600 max-w-3xl mx-auto">
+              {getContent(
+                "home-recent-publications-subtitle",
+                "Latest research findings and academic contributions"
+              )}
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner size="lg" text="Loading publications..." />
+            </div>
+          ) : recentPublications.length > 0 ? (
+            <div className="space-y-6 mb-12">
+              {recentPublications.map((publication) => (
+                <Card key={publication._id} hover>
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <Link
+                          to={`/publications/${publication._id}`}
+                          className="hover:text-blue-600 transition-colors"
+                        >
+                          {publication.title}
+                        </Link>
+                      </h3>
+
+                      <p className="text-gray-700 font-medium mb-2">
+                        {formatAuthors(publication.authors)}
+                      </p>
+
+                      <div className="text-sm text-gray-600 mb-3">
+                        {publication.journal && (
+                          <span>
+                            <strong>{publication.journal}</strong>
+                            {publication.year && ` • ${publication.year}`}
+                            {publication.volume &&
+                              ` • Vol. ${publication.volume}`}
+                          </span>
+                        )}
+                      </div>
+
+                      {publication.abstract && (
+                        <p className="text-gray-600">
+                          {truncateText(publication.abstract, 150)}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 lg:w-32">
+                      {publication.publicationType && (
+                        <span className="badge badge-blue text-xs">
+                          {publication.publicationType
+                            .replace(/-/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </span>
+                      )}
+                      {publication.year && (
+                        <span className="badge badge-gray text-xs">
+                          {publication.year}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-6">
+                {getContent(
+                  "home-no-publications",
+                  "Recent publications will be displayed here once available."
+                )}
+              </p>
+            </div>
+          )}
 
           <div className="text-center">
-            <Link to="/projects">
-              <Button size="lg" className="btn-hover">
-                {t("home.viewAllProjects")}
-              </Button>
+            <Link to="/publications" className="btn btn-primary">
+              {getContent(
+                "home-view-all-publications",
+                "View All Publications"
+              )}
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Call to Action Section */}
-      <section className="section-padding gradient-bg text-white">
-        <div className="container-custom text-center">
-          <h2 className="text-4xl font-bold mb-6">{t("home.cta.title")}</h2>
-          <p className="text-body-lg mb-10 max-w-3xl mx-auto opacity-90">
-            {t("home.cta.description")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/contact">
-              <Button
-                size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100 btn-hover"
-              >
-                {t("home.cta.contact")}
-              </Button>
-            </Link>
-            <Link to="/team">
-              <Button
-                size="lg"
-                className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 btn-hover"
-              >
-                {t("home.cta.meetTeam")}
-              </Button>
+      {/* Contact CTA Section */}
+      <section className="section-padding bg-blue-600">
+        <div className="container-custom">
+          <div className="text-center text-white">
+            <h2 className="text-3xl font-bold mb-6">
+              {getContent("home-cta-title", "Ready to Collaborate?")}
+            </h2>
+            <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+              {getContent(
+                "home-cta-description",
+                "Contact us to discuss research opportunities, partnerships, or consulting services"
+              )}
+            </p>
+            <Link
+              to="/contact"
+              className="btn btn-primary btn-lg bg-white text-blue-600 hover:bg-gray-100"
+            >
+              {getContent("home-cta-button", "Get In Touch")}
             </Link>
           </div>
         </div>
       </section>
-
-      {/* Admin Login Link - Only visible when scrolled to bottom */}
-      <div className="relative">
-        <Link
-          to="/admin/login"
-          className="admin-login-link fixed bottom-4 right-4 z-40"
-          title="Admin Login"
-        >
-          Admin
-        </Link>
-      </div>
     </div>
   );
 };

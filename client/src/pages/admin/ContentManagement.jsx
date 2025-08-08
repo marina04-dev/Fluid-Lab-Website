@@ -1,4 +1,3 @@
-// client/src/pages/admin/ContentManagement.jsx - FIXED VERSION με API integration
 import React, { useState, useEffect } from "react";
 import { useContent } from "../../contexts/ContentContext";
 import Card from "../../components/common/Card";
@@ -12,14 +11,16 @@ import toast from "react-hot-toast";
 const ContentManagement = () => {
   // get necessary variables/functions from context
   const {
+    content,
     fetchContent,
-    getContent,
     updateContent,
     createContent,
     deleteContent,
     loading,
     error,
+    clearError,
   } = useContent();
+
   // state variables to handle edit content modal display
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   // state variables to handle add content modal display
@@ -46,111 +47,125 @@ const ContentManagement = () => {
     type: "text",
     section: "general",
   });
-  // state variables to handle content items
+  // state variables to handle content items for display
   const [contentItems, setContentItems] = useState([]);
   // state variables to handle submit status
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // state variables for search and filter
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterSection, setFilterSection] = useState("all");
 
-  // Φόρτωση περιεχομένου κατά την εκκίνηση
+  // content sections for organization
+  const sections = [
+    { value: "all", label: "All Sections" },
+    { value: "general", label: "General" },
+    { value: "hero", label: "Hero Section" },
+    { value: "about", label: "About Section" },
+    { value: "home", label: "Home Page" },
+    { value: "research", label: "Research Areas" },
+    { value: "capability", label: "Capabilities" },
+    { value: "vision", label: "Vision" },
+    { value: "footer", label: "Footer" },
+  ];
+
+  // content types
+  const contentTypes = [
+    { value: "text", label: "Text" },
+    { value: "html", label: "HTML" },
+    { value: "markdown", label: "Markdown" },
+    { value: "image", label: "Image URL" },
+    { value: "link", label: "Link" },
+  ];
+
+  // Load content on component mount using API call from context
   useEffect(() => {
     loadContent();
   }, []);
 
-  // TODO: make api call to backend to get database real data
+  // Clear errors on component mount
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // Load content from database and convert to display format
   const loadContent = async () => {
     try {
       await fetchContent();
-      // hard coded data
-      // Αφού φορτωθεί το content, δημιουργούμε τη λίστα των items
-      const defaultItems = [
-        {
-          key: "hero-title",
-          label: "Hero Title",
-          section: "hero",
-          defaultValue: "Advanced Fluid Mechanics Research",
-        },
-        {
-          key: "hero-subtitle",
-          label: "Hero Subtitle",
-          section: "hero",
-          defaultValue: "Leading the Future of Fluid Dynamics",
-        },
-        {
-          key: "hero-description",
-          label: "Hero Description",
-          section: "hero",
-          defaultValue:
-            "Our research team offers efficient research and consulting services in many aspects of Fluid Flow, Hydraulics and Convective Heat Transfer.",
-        },
-        {
-          key: "about-title",
-          label: "About Title",
-          section: "about",
-          defaultValue: "About Our Research",
-        },
-        {
-          key: "about-description",
-          label: "About Description",
-          section: "about",
-          defaultValue:
-            "We are a leading research team specializing in fluid mechanics...",
-        },
-        {
-          key: "footer-description",
-          label: "Footer Description",
-          section: "footer",
-          defaultValue:
-            "Leading research in fluid mechanics and computational fluid dynamics. Advancing the future of flow analysis and simulation.",
-        },
-        {
-          key: "contact-info",
-          label: "Contact Information",
-          section: "general",
-          defaultValue: "Get in touch with our research team",
-        },
-        {
-          key: "team-intro",
-          label: "Team Introduction",
-          section: "general",
-          defaultValue: "Meet our expert research team",
-        },
-      ];
-
-      const items = defaultItems.map((item) => ({
-        ...item,
-        currentValue: getContent(item.key, item.defaultValue),
-        isCustomized: getContent(item.key) !== "",
-      }));
-
-      setContentItems(items);
     } catch (error) {
       console.error("Error loading content:", error);
       toast.error("Failed to load content");
     }
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
+  // Convert content from context to display items format
+  useEffect(() => {
+    if (content) {
+      const items = Object.keys(content).map((key) => {
+        const item = content[key];
+        return {
+          key: item.key || key,
+          title:
+            item.title ||
+            key.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+          content: item.content || "",
+          type: item.type || "text",
+          section: item.section || "general",
+          isActive: item.isActive !== false,
+          updatedAt: item.updatedAt,
+          createdAt: item.createdAt,
+        };
+      });
+      setContentItems(items);
+    }
+  }, [content]);
+
+  // Filter content items based on search and section filter
+  const filteredItems = contentItems.filter((item) => {
+    const matchesSearch =
+      item.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.content.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSection =
+      filterSection === "all" || item.section === filterSection;
+
+    return matchesSearch && matchesSection;
+  });
+
+  // function to handle edit content modal opening
   const handleEditClick = (item) => {
     setEditingContent(item);
     setEditForm({
       key: item.key,
-      title: item.label,
-      content: item.currentValue || item.defaultValue,
-      type: "text",
+      title: item.title,
+      content: item.content,
+      type: item.type,
       section: item.section,
     });
     setIsEditModalOpen(true);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle delete content modal opening
   const handleDeleteClick = (item) => {
     setDeletingContent(item);
     setIsDeleteModalOpen(true);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  // function to handle form change
-  const handleFormChange = (e) => {
+  // function to handle add content modal opening
+  const handleAddClick = () => {
+    setEditingContent(null);
+    setAddForm({
+      key: "",
+      title: "",
+      content: "",
+      type: "text",
+      section: "general",
+    });
+    setIsAddModalOpen(true);
+  };
+
+  // function to handle form change for edit form
+  const handleEditFormChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({
       ...prev,
@@ -158,8 +173,7 @@ const ContentManagement = () => {
     }));
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  // function to handle add form change
+  // function to handle form change for add form
   const handleAddFormChange = (e) => {
     const { name, value } = e.target;
     setAddForm((prev) => ({
@@ -168,9 +182,13 @@ const ContentManagement = () => {
     }));
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  // function to handle save content
+  // function to handle save content (edit) using API call from context
   const handleSave = async () => {
+    if (!editForm.key.trim()) {
+      toast.error("Content key is required");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const result = await updateContent(editingContent.key, {
@@ -184,20 +202,31 @@ const ContentManagement = () => {
       if (result.success) {
         toast.success("Content updated successfully!");
         setIsEditModalOpen(false);
-        await loadContent(); // Ανανεώνουμε τη λίστα
+        setEditingContent(null);
+        // Refresh content list
+        loadContent();
       } else {
         toast.error(result.error || "Failed to update content");
       }
     } catch (error) {
       console.error("Error updating content:", error);
-      toast.error("Failed to update content");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleAddContent = async () => {
+  // function to handle add content using API call from context
+  const handleAdd = async () => {
+    if (!addForm.key.trim()) {
+      toast.error("Content key is required");
+      return;
+    }
+    if (!addForm.title.trim()) {
+      toast.error("Content title is required");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const result = await createContent({
@@ -211,26 +240,21 @@ const ContentManagement = () => {
       if (result.success) {
         toast.success("Content created successfully!");
         setIsAddModalOpen(false);
-        setAddForm({
-          key: "",
-          title: "",
-          content: "",
-          type: "text",
-          section: "general",
-        });
-        await loadContent(); // Ανανεώνουμε τη λίστα
+        // Refresh content list
+        loadContent();
       } else {
         toast.error(result.error || "Failed to create content");
       }
     } catch (error) {
       console.error("Error creating content:", error);
-      toast.error("Failed to create content");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteContent = async () => {
+  // function to handle delete content using API call from context
+  const handleDelete = async () => {
     if (!deletingContent) return;
 
     setIsSubmitting(true);
@@ -241,370 +265,411 @@ const ContentManagement = () => {
         toast.success("Content deleted successfully!");
         setIsDeleteModalOpen(false);
         setDeletingContent(null);
-        await loadContent(); // Ανανεώνουμε τη λίστα
+        // Refresh content list
+        loadContent();
       } else {
         toast.error(result.error || "Failed to delete content");
       }
     } catch (error) {
       console.error("Error deleting content:", error);
-      toast.error("Failed to delete content");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading && contentItems.length === 0) {
+  // function to format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // function to truncate content for display
+  const truncateContent = (text, maxLength = 100) => {
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
+  // if content management page is slow display loading
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text="Loading content..." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-4 mb-2">
-            <BackButton variant="back" text="Back to Dashboard" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Content Management
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Manage website content and text. Create, edit and organize your
-            content.
-          </p>
-        </div>
-        <div className="flex space-x-3">
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            Add Content
-          </Button>
-          <Button onClick={() => toast.success("All changes saved!")}>
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-              />
-            </svg>
-            Save All Changes
-          </Button>
-        </div>
-      </div>
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {contentItems.map((item) => (
-          <Card key={item.key}>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {item.label}
-                </h3>
-                <div className="flex items-center space-x-2 mt-1">
-                  <p className="text-sm text-gray-500">Key: {item.key}</p>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      item.isCustomized
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {item.isCustomized ? "Custom" : "Default"}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      item.section === "hero"
-                        ? "bg-purple-100 text-purple-800"
-                        : item.section === "about"
-                        ? "bg-green-100 text-green-800"
-                        : item.section === "footer"
-                        ? "bg-orange-100 text-orange-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {item.section}
-                  </span>
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditClick(item)}
-                  className="flex-shrink-0"
-                >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteClick(item)}
-                  className="flex-shrink-0 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Delete
-                </Button>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container-custom py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <BackButton />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Content Management
+              </h1>
+              <p className="text-gray-600">Manage website content and text</p>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-gray-700 leading-relaxed line-clamp-4">
-                {item.currentValue || item.defaultValue}
+          </div>
+          <Button
+            onClick={handleAddClick}
+            className="flex items-center space-x-2"
+          >
+            <span>+</span>
+            <span>Add Content</span>
+          </Button>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="text-red-800">
+                <strong>Error:</strong> {error}
+              </div>
+              <button
+                onClick={clearError}
+                className="text-red-600 hover:text-red-800"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Search and Filter Controls */}
+        <Card className="mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Search Content"
+              placeholder="Search by key, title, or content..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter by Section
+              </label>
+              <select
+                value={filterSection}
+                onChange={(e) => setFilterSection(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {sections.map((section) => (
+                  <option key={section.value} value={section.value}>
+                    {section.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {filteredItems.length} of {contentItems.length} content
+            items
+          </div>
+        </Card>
+
+        {/* Content Items List */}
+        {filteredItems.length === 0 ? (
+          <Card>
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {contentItems.length === 0
+                  ? "No Content Found"
+                  : "No Matching Content"}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {contentItems.length === 0
+                  ? "Get started by adding your first content item"
+                  : "Try adjusting your search or filter criteria"}
               </p>
+              {contentItems.length === 0 && (
+                <Button onClick={handleAddClick}>
+                  Add Your First Content Item
+                </Button>
+              )}
             </div>
           </Card>
-        ))}
-      </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
+              <Card key={item.key}>
+                <div className="flex flex-col h-full">
+                  {/* Content Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="badge badge-blue text-xs">
+                        {item.section || "general"}
+                      </span>
+                      <span className="badge badge-gray text-xs">
+                        {item.type || "text"}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          item.isActive ? "bg-green-400" : "bg-red-400"
+                        }`}
+                      ></span>
+                    </div>
+                  </div>
 
-      {/* Statistics Card */}
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Content Statistics
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {contentItems.length}
-            </div>
-            <div className="text-sm text-gray-600">Total Content Items</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {contentItems.filter((item) => item.isCustomized).length}
-            </div>
-            <div className="text-sm text-gray-600">Customized Items</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
-              {contentItems.filter((item) => !item.isCustomized).length}
-            </div>
-            <div className="text-sm text-gray-600">Default Items</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-orange-600 mb-2">
-              {new Set(contentItems.map((item) => item.section)).size}
-            </div>
-            <div className="text-sm text-gray-600">Sections</div>
-          </div>
-        </div>
-      </Card>
+                  {/* Content Details */}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {item.title}
+                    </h3>
 
-      {/* Edit Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title={`Edit: ${editingContent?.label}`}
-        size="lg"
-      >
-        <div className="space-y-6">
-          <Input
-            label="Content Key"
-            name="key"
-            value={editForm.key}
-            onChange={handleFormChange}
-            disabled={true}
-            className="bg-gray-50"
-          />
+                    <div className="text-sm text-gray-500 mb-3">
+                      <strong>Key:</strong> {item.key}
+                    </div>
 
-          <Input
-            label="Title"
-            name="title"
-            value={editForm.title}
-            onChange={handleFormChange}
-            required
-          />
+                    <div className="text-gray-600 mb-4">
+                      {truncateContent(item.content)}
+                    </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Section
-            </label>
-            <select
-              name="section"
-              value={editForm.section}
-              onChange={handleFormChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    <div className="text-xs text-gray-500 space-y-1">
+                      {item.updatedAt && (
+                        <div>
+                          <strong>Updated:</strong> {formatDate(item.updatedAt)}
+                        </div>
+                      )}
+                      {item.createdAt && (
+                        <div>
+                          <strong>Created:</strong> {formatDate(item.createdAt)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditClick(item)}
+                      className="flex-1"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteClick(item)}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Edit Content Modal */}
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingContent(null);
+          }}
+          title="Edit Content"
+          size="lg"
+        >
+          <div className="space-y-6">
+            <Input
+              label="Content Key *"
+              name="key"
+              value={editForm.key}
+              onChange={handleEditFormChange}
+              placeholder="unique-content-key"
               required
-            >
-              <option value="hero">Hero</option>
-              <option value="about">About</option>
-              <option value="services">Services</option>
-              <option value="footer">Footer</option>
-              <option value="general">General</option>
-            </select>
-          </div>
+              disabled={true} // Don't allow key changes during edit
+            />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content Type
-            </label>
-            <select
-              name="type"
-              value={editForm.type}
-              onChange={handleFormChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="text">Text</option>
-              <option value="html">HTML</option>
-              <option value="markdown">Markdown</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content *
-            </label>
-            <textarea
-              name="content"
-              value={editForm.content}
-              onChange={handleFormChange}
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-              placeholder="Enter your content here..."
+            <Input
+              label="Title *"
+              name="title"
+              value={editForm.title}
+              onChange={handleEditFormChange}
+              placeholder="Content Title"
               required
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content Type
+                </label>
+                <select
+                  name="type"
+                  value={editForm.type}
+                  onChange={handleEditFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {contentTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Section
+                </label>
+                <select
+                  name="section"
+                  value={editForm.section}
+                  onChange={handleEditFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {sections
+                    .filter((s) => s.value !== "all")
+                    .map((section) => (
+                      <option key={section.value} value={section.value}>
+                        {section.label}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Content *
+              </label>
+              <textarea
+                name="content"
+                value={editForm.content}
+                onChange={handleEditFormChange}
+                rows="8"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter content..."
+                required
+              />
+            </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-4 mt-8">
             <Button
               variant="outline"
-              onClick={() => setIsEditModalOpen(false)}
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingContent(null);
+              }}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
+            <Button
+              onClick={handleSave}
+              disabled={isSubmitting}
+              className="flex items-center space-x-2"
+            >
+              {isSubmitting && <LoadingSpinner size="sm" />}
+              <span>{isSubmitting ? "Saving..." : "Save Changes"}</span>
             </Button>
           </div>
-        </div>
-      </Modal>
+        </Modal>
 
-      {/* Add Content Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add New Content"
-        size="lg"
-      >
-        <div className="space-y-6">
-          <Input
-            label="Content Key *"
-            name="key"
-            value={addForm.key}
-            onChange={handleAddFormChange}
-            placeholder="e.g., hero-new-section"
-            required
-          />
-
-          <Input
-            label="Title *"
-            name="title"
-            value={addForm.title}
-            onChange={handleAddFormChange}
-            placeholder="e.g., New Hero Section"
-            required
-          />
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Section *
-            </label>
-            <select
-              name="section"
-              value={addForm.section}
+        {/* Add Content Modal */}
+        <Modal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          title="Add New Content"
+          size="lg"
+        >
+          <div className="space-y-6">
+            <Input
+              label="Content Key *"
+              name="key"
+              value={addForm.key}
               onChange={handleAddFormChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="general">General</option>
-              <option value="hero">Hero</option>
-              <option value="about">About</option>
-              <option value="services">Services</option>
-              <option value="footer">Footer</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content Type
-            </label>
-            <select
-              name="type"
-              value={addForm.type}
-              onChange={handleAddFormChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="text">Text</option>
-              <option value="html">HTML</option>
-              <option value="markdown">Markdown</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content *
-            </label>
-            <textarea
-              name="content"
-              value={addForm.content}
-              onChange={handleAddFormChange}
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-              placeholder="Enter your content here..."
+              placeholder="unique-content-key (e.g., hero-title)"
               required
             />
+
+            <Input
+              label="Title *"
+              name="title"
+              value={addForm.title}
+              onChange={handleAddFormChange}
+              placeholder="Content Title"
+              required
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content Type
+                </label>
+                <select
+                  name="type"
+                  value={addForm.type}
+                  onChange={handleAddFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {contentTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Section
+                </label>
+                <select
+                  name="section"
+                  value={addForm.section}
+                  onChange={handleAddFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {sections
+                    .filter((s) => s.value !== "all")
+                    .map((section) => (
+                      <option key={section.value} value={section.value}>
+                        {section.label}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Content *
+              </label>
+              <textarea
+                name="content"
+                value={addForm.content}
+                onChange={handleAddFormChange}
+                rows="8"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter content..."
+                required
+              />
+            </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-4 mt-8">
             <Button
               variant="outline"
               onClick={() => setIsAddModalOpen(false)}
@@ -612,70 +677,62 @@ const ContentManagement = () => {
             >
               Cancel
             </Button>
-            <Button onClick={handleAddContent} disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Content"}
+            <Button
+              onClick={handleAdd}
+              disabled={isSubmitting}
+              className="flex items-center space-x-2"
+            >
+              {isSubmitting && <LoadingSpinner size="sm" />}
+              <span>{isSubmitting ? "Creating..." : "Create Content"}</span>
             </Button>
           </div>
-        </div>
-      </Modal>
+        </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title="Delete Content"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Are you sure you want to delete "
-            <strong>{deletingContent?.label}</strong>"? This action cannot be
-            undone.
-          </p>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Warning</h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>
-                    This will permanently remove this content item from your
-                    website.
-                  </p>
-                </div>
-              </div>
-            </div>
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setDeletingContent(null);
+          }}
+          title="Delete Content"
+        >
+          <div className="text-center">
+            <div className="text-red-600 text-6xl mb-4">⚠️</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Are you sure you want to delete this content?
+            </h3>
+            {deletingContent && (
+              <p className="text-gray-600 mb-6">
+                This will permanently delete the content item "
+                {deletingContent.title}" with key "{deletingContent.key}". This
+                action cannot be undone.
+              </p>
+            )}
           </div>
-          <div className="flex justify-end space-x-3 pt-4">
+
+          <div className="flex justify-center space-x-4 mt-8">
             <Button
               variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeletingContent(null);
+              }}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
-              onClick={handleDeleteContent}
+              onClick={handleDelete}
               disabled={isSubmitting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white flex items-center space-x-2"
             >
-              {isSubmitting ? "Deleting..." : "Delete Content"}
+              {isSubmitting && <LoadingSpinner size="sm" />}
+              <span>{isSubmitting ? "Deleting..." : "Delete Content"}</span>
             </Button>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
     </div>
   );
 };

@@ -7,7 +7,7 @@ import Button from "../components/common/Button";
 
 const Projects = () => {
   // get context's necessary variables/functions
-  const { projects, fetchProjects, loading } = useContent();
+  const { projects, fetchProjects, loading, error, clearError } = useContent();
   // category filter state variables
   const [selectedCategory, setSelectedCategory] = useState("all");
   // status filter state variables
@@ -41,17 +41,53 @@ const Projects = () => {
     { value: "planned", label: "Planned" },
   ];
 
-  // fetchProjects each time any of the filters changes
+  // fetchProjects each time any of the filters changes using the API call from context
   useEffect(() => {
     const filters = {};
-    if (selectedCategory !== "all") filters.category = selectedCategory;
-    if (selectedStatus !== "all") filters.status = selectedStatus;
+    if (selectedCategory !== "all") {
+      filters.category = selectedCategory;
+    }
+    if (selectedStatus !== "all") {
+      filters.status = selectedStatus;
+    }
 
+    // Call the API using context function
     fetchProjects(filters);
   }, [selectedCategory, selectedStatus, fetchProjects]);
 
-  // store the filtered projects in another variable
-  const filteredProjects = projects;
+  // Clear any existing errors on component mount
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // function to get status badge style based on project status
+  const getStatusBadge = (status) => {
+    const statusStyles = {
+      active: "badge-green",
+      completed: "badge-blue",
+      planned: "badge-yellow",
+      "on-hold": "badge-red",
+    };
+    return statusStyles[status] || "badge-gray";
+  };
+
+  // function to format date display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // function to truncate text for card display
+  const truncateText = (text, maxLength = 150) => {
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
 
   // if projects display is slow display loading
   if (loading) {
@@ -62,28 +98,6 @@ const Projects = () => {
     );
   }
 
-  // color adjustment based on the status value
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-      case "planned":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-    });
-  };
-
   return (
     <div className="min-h-screen">
       {/* Header Section */}
@@ -92,24 +106,32 @@ const Projects = () => {
           <div className="text-center text-white">
             <h1 className="text-5xl font-bold mb-6">Research Projects</h1>
             <p className="text-xl opacity-90 max-w-3xl mx-auto">
-              Explore our current and completed research initiatives in fluid
-              mechanics and related fields
+              Explore our cutting-edge research initiatives in fluid mechanics
+              and related fields
             </p>
           </div>
         </div>
       </section>
 
-      {/* Filters Section */}
-      <section className="py-8 bg-white border-b">
+      {/* Content Section */}
+      <section className="section-padding bg-gray-50">
         <div className="container-custom">
-          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Category Filter */}
-              <div className="min-w-0 flex-1 lg:min-w-64">
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Filter by Category
+                </label>
                 <select
+                  id="category"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {categories.map((category) => (
                     <option key={category.value} value={category.value}>
@@ -120,11 +142,18 @@ const Projects = () => {
               </div>
 
               {/* Status Filter */}
-              <div className="min-w-0 flex-1 lg:min-w-48">
+              <div>
+                <label
+                  htmlFor="status"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Filter by Status
+                </label>
                 <select
+                  id="status"
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {statuses.map((status) => (
                     <option key={status.value} value={status.value}>
@@ -134,192 +163,167 @@ const Projects = () => {
                 </select>
               </div>
             </div>
-
-            <div className="text-sm text-gray-600">
-              {filteredProjects.length} project
-              {filteredProjects.length !== 1 ? "s" : ""} found
-            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Projects Grid */}
-      <section className="section-padding bg-gray-50">
-        <div className="container-custom">
-          {filteredProjects.length === 0 ? (
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+              <div className="flex items-center">
+                <div className="text-red-800">
+                  <strong>Error:</strong> {error}
+                </div>
+                <button
+                  onClick={clearError}
+                  className="ml-auto text-red-600 hover:text-red-800"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Projects Grid */}
+          {!projects || projects.length === 0 ? (
             <div className="text-center py-16">
-              <svg
-                className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No projects found
-              </h3>
-              <p className="text-gray-600">
-                Try adjusting your filters to see more results.
-              </p>
+              <div className="max-w-md mx-auto">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  No Projects Found
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {selectedCategory !== "all" || selectedStatus !== "all"
+                    ? "No projects match your current filters. Try adjusting your search criteria."
+                    : "No projects are available at the moment."}
+                </p>
+                {(selectedCategory !== "all" || selectedStatus !== "all") && (
+                  <Button
+                    onClick={() => {
+                      setSelectedCategory("all");
+                      setSelectedStatus("all");
+                    }}
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProjects.map((project) => (
-                <Card key={project._id} hover>
-                  <div className="h-full flex flex-col">
-                    {/* Project Image */}
-                    {project.images && project.images.length > 0 ? (
-                      <div className="mb-4">
-                        <img
-                          src={project.images[0].url}
-                          alt={project.images[0].caption || project.title}
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                      </div>
-                    ) : (
-                      <div className="mb-4">
-                        <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                          <svg
-                            className="w-12 h-12 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
+              {projects.map((project) => (
+                <Card key={project._id} hover className="flex flex-col h-full">
+                  {/* Project Image */}
+                  {project.images && project.images.length > 0 && (
+                    <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 overflow-hidden">
+                      <img
+                        src={project.images[0].url || project.images[0]}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.parentElement.className =
+                            "aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 flex items-center justify-center";
+                          e.target.parentElement.innerHTML =
+                            '<span class="text-white font-semibold">No Image</span>';
+                        }}
+                      />
+                    </div>
+                  )}
 
-                    {/* Project Info */}
-                    <div className="flex-1 flex flex-col">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                  {!project.images ||
+                    (project.images.length === 0 && (
+                      <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 flex items-center justify-center">
+                        <span className="text-white font-semibold">
+                          No Image Available
+                        </span>
+                      </div>
+                    ))}
+
+                  {/* Project Content */}
+                  <div className="flex-1 flex flex-col">
+                    {/* Status and Featured badges */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span
+                        className={`badge ${getStatusBadge(project.status)}`}
+                      >
+                        {project.status.charAt(0).toUpperCase() +
+                          project.status.slice(1)}
+                      </span>
+                      {project.isFeatured && (
+                        <span className="badge badge-purple">Featured</span>
+                      )}
+                    </div>
+
+                    {/* Project Title */}
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      <Link
+                        to={`/projects/${project._id}`}
+                        className="hover:text-blue-600 transition-colors"
+                      >
+                        {project.title}
+                      </Link>
+                    </h3>
+
+                    {/* Project Description */}
+                    <p className="text-gray-600 mb-4 flex-1">
+                      {truncateText(
+                        project.shortDescription || project.description
+                      )}
+                    </p>
+
+                    {/* Project Metadata */}
+                    <div className="space-y-2 mb-4">
+                      {project.category && (
+                        <div className="text-sm text-gray-500">
+                          <strong>Category:</strong>{" "}
                           {project.category
-                            .replace("-", " ")
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </span>
-                        <span
-                          className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(
-                            project.status
-                          )}`}
-                        >
-                          {project.status.charAt(0).toUpperCase() +
-                            project.status.slice(1)}
-                        </span>
-                        {project.isFeatured && (
-                          <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-                            Featured
+                            .split("-")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
+                        </div>
+                      )}
+                      {project.startDate && (
+                        <div className="text-sm text-gray-500">
+                          <strong>Started:</strong>{" "}
+                          {formatDate(project.startDate)}
+                        </div>
+                      )}
+                      {project.endDate && (
+                        <div className="text-sm text-gray-500">
+                          <strong>Expected End:</strong>{" "}
+                          {formatDate(project.endDate)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Project Tags */}
+                    {project.tags && project.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {project.tags.slice(0, 3).map((tag, index) => (
+                          <span
+                            key={index}
+                            className="badge badge-gray text-xs"
+                          >
+                            {tag.trim()}
+                          </span>
+                        ))}
+                        {project.tags.length > 3 && (
+                          <span className="badge badge-gray text-xs">
+                            +{project.tags.length - 3} more
                           </span>
                         )}
                       </div>
+                    )}
 
-                      <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                        {project.title}
-                      </h3>
-
-                      <p className="text-gray-600 mb-4 flex-1">
-                        {project.description}
-                      </p>
-
-                      {/* Project Metadata */}
-                      <div className="space-y-2 mb-4 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <svg
-                            className="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"
-                            />
-                          </svg>
-                          Started: {formatDate(project.startDate)}
-                        </div>
-                        {project.endDate && (
-                          <div className="flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            Completed: {formatDate(project.endDate)}
-                          </div>
-                        )}
-                        {project.teamMembers &&
-                          project.teamMembers.length > 0 && (
-                            <div className="flex items-center">
-                              <svg
-                                className="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                                />
-                              </svg>
-                              {project.teamMembers.length} team member
-                              {project.teamMembers.length !== 1 ? "s" : ""}
-                            </div>
-                          )}
-                      </div>
-
-                      {/* Tags */}
-                      {project.tags && project.tags.length > 0 && (
-                        <div className="mb-4">
-                          <div className="flex flex-wrap gap-2">
-                            {project.tags.slice(0, 3).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                            {project.tags.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                +{project.tags.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* View Details Link */}
-                      <Link
-                        to={`/projects/${project._id}`}
-                        className="text-blue-600 hover:text-blue-700 font-medium mt-auto"
-                      >
-                        View Details →
-                      </Link>
-                    </div>
+                    {/* View Project Button */}
+                    <Link
+                      to={`/projects/${project._id}`}
+                      className="btn btn-primary w-full mt-auto"
+                    >
+                      View Project Details
+                    </Link>
                   </div>
                 </Card>
               ))}

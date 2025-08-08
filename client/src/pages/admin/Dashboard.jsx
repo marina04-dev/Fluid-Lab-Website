@@ -1,5 +1,4 @@
-// client/src/pages/admin/Dashboard.jsx - FIXED VERSION
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useContent } from "../../contexts/ContentContext";
@@ -15,10 +14,46 @@ import MessageManagement from "./MessageManagement";
 const Dashboard = () => {
   // get the user from AuthContext
   const { user } = useAuth();
-  // get necessary variables/functions from context
-  const { content, team, projects, publications, loading } = useContent();
+  // get necessary variables/functions from ContentContext
+  const {
+    content,
+    team,
+    projects,
+    publications,
+    loading,
+    error,
+    fetchContent,
+    fetchTeam,
+    fetchProjects,
+    fetchPublications,
+    clearError,
+  } = useContent();
   // use path location
   const location = useLocation();
+
+  // Load all dashboard data on component mount
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        // Fetch all necessary data for dashboard overview
+        await Promise.all([
+          fetchContent(),
+          fetchTeam(),
+          fetchProjects(),
+          fetchPublications(),
+        ]);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      }
+    };
+
+    loadDashboardData();
+  }, [fetchContent, fetchTeam, fetchProjects, fetchPublications]);
+
+  // Clear any existing errors on component mount
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   // navigation menus
   const navigation = [
@@ -68,6 +103,39 @@ const Dashboard = () => {
     return location.pathname.startsWith(path);
   };
 
+  // function to calculate recent activity (last 30 days)
+  const getRecentStats = () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recentProjects =
+      projects?.filter((project) => new Date(project.createdAt) > thirtyDaysAgo)
+        .length || 0;
+
+    const recentPublications =
+      publications?.filter(
+        (publication) => new Date(publication.createdAt) > thirtyDaysAgo
+      ).length || 0;
+
+    const recentTeamMembers =
+      team?.filter((member) => new Date(member.createdAt) > thirtyDaysAgo)
+        .length || 0;
+
+    const activeProjects =
+      projects?.filter(
+        (project) => project.status === "active" && project.isActive !== false
+      ).length || 0;
+
+    return {
+      recentProjects,
+      recentPublications,
+      recentTeamMembers,
+      activeProjects,
+    };
+  };
+
+  const recentStats = getRecentStats();
+
   const OverviewPage = () => (
     <div className="space-y-8">
       {/* Header */}
@@ -83,6 +151,30 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-red-800">
+              <strong>Error:</strong> {error}
+            </div>
+            <button
+              onClick={clearError}
+              className="text-red-600 hover:text-red-800"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && Object.keys(content).length === 0 && (
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" text="Loading dashboard data..." />
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-lg transition-shadow duration-200">
@@ -97,6 +189,7 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-gray-900">
                 {Object.keys(content).length}
               </p>
+              <p className="text-xs text-gray-400">Website content entries</p>
             </div>
           </div>
         </Card>
@@ -113,6 +206,9 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-gray-900">
                 {team.length}
               </p>
+              <p className="text-xs text-gray-400">
+                +{recentStats.recentTeamMembers} this month
+              </p>
             </div>
           </div>
         </Card>
@@ -126,10 +222,13 @@ const Dashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">
-                Active Projects
+                Research Projects
               </p>
               <p className="text-2xl font-semibold text-gray-900">
                 {projects.length}
+              </p>
+              <p className="text-xs text-gray-400">
+                {recentStats.activeProjects} active projects
               </p>
             </div>
           </div>
@@ -147,8 +246,124 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-gray-900">
                 {publications.length}
               </p>
+              <p className="text-xs text-gray-400">
+                +{recentStats.recentPublications} this month
+              </p>
             </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Projects */}
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Recent Projects
+            </h3>
+            <Link
+              to="/admin/projects"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              View all →
+            </Link>
+          </div>
+          {projects.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No projects found</p>
+          ) : (
+            <div className="space-y-4">
+              {projects
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 3)
+                .map((project) => (
+                  <div
+                    key={project._id}
+                    className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        project.status === "active"
+                          ? "bg-green-400"
+                          : project.status === "completed"
+                          ? "bg-blue-400"
+                          : project.status === "planned"
+                          ? "bg-yellow-400"
+                          : "bg-gray-400"
+                      }`}
+                    ></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {project.title}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {project.status?.charAt(0).toUpperCase() +
+                          project.status?.slice(1) || "Unknown"}
+                        {project.category &&
+                          ` • ${project.category.replace(/-/g, " ")}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Recent Publications */}
+        <Card>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Recent Publications
+            </h3>
+            <Link
+              to="/admin/publications"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              View all →
+            </Link>
+          </div>
+          {publications.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No publications found
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {publications
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 3)
+                .map((publication) => (
+                  <div
+                    key={publication._id}
+                    className="p-3 bg-gray-50 rounded-lg"
+                  >
+                    <p className="text-sm font-medium text-gray-900 truncate mb-1">
+                      {publication.title}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {Array.isArray(publication.authors)
+                        ? publication.authors.slice(0, 2).join(", ") +
+                          (publication.authors.length > 2 ? " et al." : "")
+                        : publication.authors || "Unknown authors"}
+                      {publication.year && ` • ${publication.year}`}
+                    </p>
+                    <div className="flex items-center mt-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          publication.publicationType === "journal"
+                            ? "bg-blue-100 text-blue-800"
+                            : publication.publicationType === "conference"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {publication.publicationType?.replace("-", " ") ||
+                          "Publication"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </Card>
       </div>
 
@@ -158,181 +373,63 @@ const Dashboard = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link
-            to="/admin/content"
-            className="group flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200 cursor-pointer"
-          >
-            <div className="flex-shrink-0">
-              <span className="text-2xl">📝</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-blue-800">
-                Update Content
-              </p>
-              <p className="text-xs text-blue-600">
-                Edit website text and copy
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            to="/admin/team"
-            className="group flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors duration-200 cursor-pointer"
-          >
-            <div className="flex-shrink-0">
-              <span className="text-2xl">👥</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-green-800">
-                Add Team Member
-              </p>
-              <p className="text-xs text-green-600">Manage team members</p>
-            </div>
-          </Link>
-
-          <Link
-            to="/admin/projects"
-            className="group flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors duration-200 cursor-pointer"
-          >
-            <div className="flex-shrink-0">
-              <span className="text-2xl">🔬</span>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-semibold text-purple-800">
-                New Project
-              </p>
-              <p className="text-xs text-purple-600">Create research project</p>
-            </div>
-          </Link>
-        </div>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Recent Activity
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-            <div>
-              <p className="text-sm text-gray-900">
-                System started successfully
-              </p>
-              <p className="text-xs text-gray-500">Just now</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-            <div>
-              <p className="text-sm text-gray-900">Database connected</p>
-              <p className="text-xs text-gray-500">Just now</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-            <div>
-              <p className="text-sm text-gray-900">
-                User {user?.username} logged in
-              </p>
-              <p className="text-xs text-gray-500">Just now</p>
-            </div>
-          </div>
+          {navigation
+            .filter((item) => item.href !== "/admin")
+            .map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-2xl">{item.icon}</span>
+                <div>
+                  <p className="font-medium text-gray-900">{item.name}</p>
+                  <p className="text-sm text-gray-500">{item.description}</p>
+                </div>
+              </Link>
+            ))}
         </div>
       </Card>
 
       {/* System Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            System Health
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Server Status</span>
-              <span className="flex items-center text-sm text-green-600 font-medium">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Online
-              </span>
+      <Card>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">
+          System Status
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Database</span>
-              <span className="flex items-center text-sm text-green-600 font-medium">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Connected
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">API Services</span>
-              <span className="flex items-center text-sm text-green-600 font-medium">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Active
-              </span>
-            </div>
+            <p className="text-sm font-medium text-gray-900">Server Status</p>
+            <p className="text-xs text-gray-500">Online</p>
           </div>
-        </Card>
 
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            User Information
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Username</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {user?.username}
-              </span>
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Email</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {user?.email}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Role</span>
-              <span className="text-sm text-gray-900 font-medium capitalize">
-                {user?.role}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Last Login</span>
-              <span className="text-sm text-gray-900 font-medium">
-                Just now
-              </span>
-            </div>
+            <p className="text-sm font-medium text-gray-900">Database</p>
+            <p className="text-xs text-gray-500">Connected</p>
           </div>
-        </Card>
-      </div>
-    </div>
-  );
 
-  const PlaceholderPage = ({ title, description, isImplemented = false }) => (
-    <div className="space-y-8">
-      <div className="flex items-center space-x-4 mb-8">
-        <BackButton variant="back" text="Back to Dashboard" />
-      </div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-        <p className="text-gray-600 mt-2">{description}</p>
-      </div>
-      {!isImplemented && (
-        <Card>
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🚧</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Coming Soon
-            </h3>
-            <p className="text-gray-600">
-              This admin section is under development.
-            </p>
-            <p className="text-sm text-gray-500 mt-4">
-              This page will include full functionality for managing{" "}
-              {title.toLowerCase()}.
-            </p>
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3">
+              <span className="text-sm font-bold text-blue-600">API</span>
+            </div>
+            <p className="text-sm font-medium text-gray-900">API Status</p>
+            <p className="text-xs text-gray-500">Operational</p>
           </div>
-        </Card>
-      )}
+
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3">
+              <span className="text-sm font-bold text-purple-600">78%</span>
+            </div>
+            <p className="text-sm font-medium text-gray-900">Storage Used</p>
+            <p className="text-xs text-gray-500">Healthy</p>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 
@@ -379,22 +476,32 @@ const Dashboard = () => {
             {/* System Status in Sidebar */}
             <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
               <h3 className="text-sm font-medium text-gray-900 mb-3">
-                System Status
+                Quick Stats
               </h3>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Server</span>
-                  <span className="text-green-600 font-medium">● Online</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Database</span>
-                  <span className="text-green-600 font-medium">
-                    ● Connected
+                  <span className="text-gray-600">Content</span>
+                  <span className="text-blue-600 font-medium">
+                    {Object.keys(content).length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Storage</span>
-                  <span className="text-blue-600 font-medium">78% Used</span>
+                  <span className="text-gray-600">Team</span>
+                  <span className="text-green-600 font-medium">
+                    {team.length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Projects</span>
+                  <span className="text-purple-600 font-medium">
+                    {projects.length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Publications</span>
+                  <span className="text-yellow-600 font-medium">
+                    {publications.length}
+                  </span>
                 </div>
               </div>
             </div>

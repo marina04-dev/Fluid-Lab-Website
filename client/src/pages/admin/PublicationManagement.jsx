@@ -1,15 +1,26 @@
-// client/src/pages/admin/PublicationManagement.jsx
 import React, { useState, useEffect } from "react";
+import { useContent } from "../../contexts/ContentContext";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
 import BackButton from "../../components/common/BackButton";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 
 const PublicationManagement = () => {
-  // state variables to handle publications display
-  const [publications, setPublications] = useState([]);
+  // get context's necessary variables/functions
+  const {
+    publications,
+    fetchPublications,
+    createPublication,
+    updatePublication,
+    deletePublication,
+    loading,
+    error,
+    clearError,
+  } = useContent();
+
   // state variables to handle add publication modal display
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   // state variables to handle edit publication modal display
@@ -34,8 +45,10 @@ const PublicationManagement = () => {
     isFeatured: false,
     isActive: true,
   });
+  // state variable to track submitting status
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // hard coded publication types
+  // publication types options
   const publicationTypes = [
     "journal",
     "conference",
@@ -45,120 +58,35 @@ const PublicationManagement = () => {
     "preprint",
   ];
 
-  // hard coded status options
+  // status options
   const statusOptions = ["published", "accepted", "under-review", "draft"];
 
-  // Mock data για demo
+  // Load publications on component mount using API call from context
   useEffect(() => {
-    const mockPublications = [
-      {
-        id: 1,
-        title: "Advanced Computational Methods for Turbulent Flow Analysis",
-        authors: "M. Papadakis, N. Georgiadis, A. Christou",
-        journal: "Journal of Computational Fluid Dynamics",
-        year: "2024",
-        volume: "38",
-        issue: "2",
-        pages: "145-162",
-        doi: "10.1080/10618562.2024.1234567",
-        abstract:
-          "This paper presents novel computational methods for analyzing complex turbulent flow phenomena. The proposed approach combines high-order numerical schemes with advanced turbulence modeling techniques to achieve unprecedented accuracy in flow predictions.",
-        keywords: "Turbulent flow, CFD, Numerical methods, Turbulence modeling",
-        publicationType: "journal",
-        status: "published",
-        pdfUrl: "https://example.com/paper1.pdf",
-        isFeatured: true,
-        isActive: true,
-        createdAt: "2024-01-15",
-        citations: 12,
-      },
-      {
-        id: 2,
-        title: "Biofluid Mechanics Applications in Cardiovascular Research",
-        authors: "A. Christou, M. Papadakis",
-        journal: "Annual Review of Biomedical Engineering",
-        year: "2024",
-        volume: "26",
-        issue: "1",
-        pages: "287-315",
-        doi: "10.1146/annurev-bioeng-2024-071523",
-        abstract:
-          "A comprehensive review of recent advances in biofluid mechanics with specific focus on cardiovascular applications. The review covers experimental techniques, computational modeling, and clinical implications.",
-        keywords:
-          "Biofluid mechanics, Cardiovascular, Blood flow, Medical applications",
-        publicationType: "journal",
-        status: "published",
-        pdfUrl: "https://example.com/paper2.pdf",
-        isFeatured: true,
-        isActive: true,
-        createdAt: "2024-02-01",
-        citations: 8,
-      },
-      {
-        id: 3,
-        title: "Heat Transfer Enhancement in Industrial Heat Exchangers",
-        authors: "N. Georgiadis, M. Papadakis",
-        journal: "Proceedings of the International Heat Transfer Conference",
-        year: "2023",
-        volume: "",
-        issue: "",
-        pages: "1542-1549",
-        doi: "10.1615/IHTC17.hte.2023.045612",
-        abstract:
-          "Investigation of various heat transfer enhancement techniques applicable to industrial heat exchangers. The study includes both experimental validation and numerical simulations.",
-        keywords:
-          "Heat transfer, Heat exchangers, Industrial applications, Enhancement techniques",
-        publicationType: "conference",
-        status: "published",
-        pdfUrl: "https://example.com/paper3.pdf",
-        isFeatured: false,
-        isActive: true,
-        createdAt: "2023-11-15",
-        citations: 5,
-      },
-      {
-        id: 4,
-        title: "Machine Learning Applications in Fluid Mechanics",
-        authors: "M. Papadakis, A. Christou, N. Georgiadis",
-        journal: "Physics of Fluids",
-        year: "2024",
-        volume: "36",
-        issue: "3",
-        pages: "",
-        doi: "10.1063/5.0201234",
-        abstract:
-          "Exploring the integration of machine learning techniques with traditional fluid mechanics approaches for enhanced prediction and analysis capabilities.",
-        keywords: "Machine learning, Fluid mechanics, AI, Data analysis",
-        publicationType: "journal",
-        status: "accepted",
-        pdfUrl: "",
-        isFeatured: false,
-        isActive: true,
-        createdAt: "2024-03-01",
-        citations: 0,
-      },
-    ];
-    setPublications(mockPublications);
-  }, []);
+    fetchPublications();
+  }, [fetchPublications]);
 
-  // function to handle form inputs
+  // Clear errors on component mount
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // function to handle form inputs change
   const handleFormChange = (e) => {
-    // get the name, value, type, checked from event
     const { name, value, type, checked } = e.target;
-    // provide the data in the setter function
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle add publication modal opening
   const handleAddPublication = () => {
     setFormData({
       title: "",
       authors: "",
       journal: "",
-      year: new Date().getFullYear().toString(),
+      year: "",
       volume: "",
       issue: "",
       pages: "",
@@ -166,524 +94,635 @@ const PublicationManagement = () => {
       abstract: "",
       keywords: "",
       publicationType: "journal",
-      status: "draft",
+      status: "published",
       pdfUrl: "",
       isFeatured: false,
       isActive: true,
     });
+    setEditingPublication(null);
     setIsAddModalOpen(true);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle edit publication modal opening
   const handleEditPublication = (publication) => {
     setEditingPublication(publication);
     setFormData({
-      title: publication.title,
-      authors: publication.authors,
-      journal: publication.journal,
-      year: publication.year,
-      volume: publication.volume,
-      issue: publication.issue,
-      pages: publication.pages,
-      doi: publication.doi,
-      abstract: publication.abstract,
-      keywords: publication.keywords,
-      publicationType: publication.publicationType,
-      status: publication.status,
-      pdfUrl: publication.pdfUrl,
-      isFeatured: publication.isFeatured,
-      isActive: publication.isActive,
+      title: publication.title || "",
+      authors: Array.isArray(publication.authors)
+        ? publication.authors.join(", ")
+        : publication.authors || "",
+      journal: publication.journal || "",
+      year: publication.year?.toString() || "",
+      volume: publication.volume || "",
+      issue: publication.issue || "",
+      pages: publication.pages || "",
+      doi: publication.doi || "",
+      abstract: publication.abstract || "",
+      keywords: Array.isArray(publication.keywords)
+        ? publication.keywords.join(", ")
+        : publication.keywords || "",
+      publicationType: publication.publicationType || "journal",
+      status: publication.status || "published",
+      pdfUrl: publication.pdfUrl || "",
+      isFeatured: publication.isFeatured || false,
+      isActive:
+        publication.isActive !== undefined ? publication.isActive : true,
     });
     setIsEditModalOpen(true);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleSavePublication = () => {
-    if (editingPublication) {
-      // Update existing publication
-      setPublications((prev) =>
-        prev.map((publication) =>
-          publication.id === editingPublication.id
-            ? { ...publication, ...formData }
-            : publication
-        )
-      );
-      toast.success("Publication updated successfully!");
-      setIsEditModalOpen(false);
-    } else {
-      // Add new publication
-      const newPublication = {
-        id: Date.now(),
+  // function to handle publication save (create or update) using API calls from context
+  const handleSavePublication = async () => {
+    // Basic validation
+    if (!formData.title.trim()) {
+      toast.error("Publication title is required");
+      return;
+    }
+    if (!formData.authors.trim()) {
+      toast.error("Authors are required");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare data for API
+      const publicationData = {
         ...formData,
-        citations: 0,
-        createdAt: new Date().toISOString().split("T")[0],
+        // Convert comma-separated strings to arrays where needed
+        authors: formData.authors
+          ? formData.authors
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item)
+          : [],
+        keywords: formData.keywords
+          ? formData.keywords
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item)
+          : [],
+        // Convert year to number
+        year: formData.year ? parseInt(formData.year) : null,
       };
-      setPublications((prev) => [...prev, newPublication]);
-      toast.success("New publication added successfully!");
-      setIsAddModalOpen(false);
+
+      let result;
+      if (editingPublication) {
+        // Update existing publication using context function
+        result = await updatePublication(
+          editingPublication._id,
+          publicationData
+        );
+      } else {
+        // Create new publication using context function
+        result = await createPublication(publicationData);
+      }
+
+      if (result.success) {
+        toast.success(
+          editingPublication
+            ? "Publication updated successfully!"
+            : "Publication created successfully!"
+        );
+        setIsEditModalOpen(false);
+        setIsAddModalOpen(false);
+        setEditingPublication(null);
+        // Refresh publications list
+        fetchPublications();
+      } else {
+        toast.error(result.error || "Failed to save publication");
+      }
+    } catch (error) {
+      console.error("Error saving publication:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
-    setEditingPublication(null);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleDeletePublication = (id) => {
-    if (window.confirm("Are you sure you want to delete this publication?")) {
-      setPublications((prev) =>
-        prev.filter((publication) => publication.id !== id)
-      );
-      toast.success("Publication deleted successfully!");
-    }
-  };
-
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleToggleFeatured = (id) => {
-    setPublications((prev) =>
-      prev.map((publication) =>
-        publication.id === id
-          ? { ...publication, isFeatured: !publication.isFeatured }
-          : publication
+  // function to handle publication deletion using API call from context
+  const handleDeletePublication = async (publicationId) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this publication? This action cannot be undone."
       )
+    ) {
+      try {
+        const result = await deletePublication(publicationId);
+        if (result.success) {
+          toast.success("Publication deleted successfully!");
+          // Refresh publications list
+          fetchPublications();
+        } else {
+          toast.error(result.error || "Failed to delete publication");
+        }
+      } catch (error) {
+        console.error("Error deleting publication:", error);
+        toast.error("An unexpected error occurred");
+      }
+    }
+  };
+
+  // function to handle publication status toggle using API call from context
+  const handleToggleStatus = async (publication) => {
+    try {
+      const result = await updatePublication(publication._id, {
+        ...publication,
+        isActive: !publication.isActive,
+      });
+
+      if (result.success) {
+        toast.success("Publication status updated!");
+        // Refresh publications list
+        fetchPublications();
+      } else {
+        toast.error(result.error || "Failed to update publication status");
+      }
+    } catch (error) {
+      console.error("Error updating publication status:", error);
+      toast.error("An unexpected error occurred");
+    }
+  };
+
+  // function to handle featured status toggle using API call from context
+  const handleToggleFeatured = async (publication) => {
+    try {
+      const result = await updatePublication(publication._id, {
+        ...publication,
+        isFeatured: !publication.isFeatured,
+      });
+
+      if (result.success) {
+        toast.success("Featured status updated!");
+        // Refresh publications list
+        fetchPublications();
+      } else {
+        toast.error(result.error || "Failed to update featured status");
+      }
+    } catch (error) {
+      console.error("Error updating featured status:", error);
+      toast.error("An unexpected error occurred");
+    }
+  };
+
+  // function to format authors for display
+  const formatAuthors = (authors) => {
+    if (Array.isArray(authors)) {
+      return authors.join(", ");
+    }
+    return authors || "";
+  };
+
+  // function to truncate text for display
+  const truncateText = (text, maxLength = 100) => {
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
+  // function to get publication type display name
+  const getTypeDisplayName = (type) => {
+    return type
+      ? type
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ")
+      : "Unknown";
+  };
+
+  // if publications management page is slow display loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading publications..." />
+      </div>
     );
-    toast.success("Featured status updated!");
-  };
-
-  // publication status color
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "published":
-        return "bg-green-100 text-green-700";
-      case "accepted":
-        return "bg-blue-100 text-blue-700";
-      case "under-review":
-        return "bg-yellow-100 text-yellow-700";
-      case "draft":
-        return "bg-gray-100 text-gray-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  // publication type color
-  const getPublicationTypeColor = (type) => {
-    switch (type) {
-      case "journal":
-        return "bg-blue-50 text-blue-700";
-      case "conference":
-        return "bg-purple-50 text-purple-700";
-      case "book-chapter":
-        return "bg-green-50 text-green-700";
-      case "thesis":
-        return "bg-orange-50 text-orange-700";
-      case "report":
-        return "bg-gray-50 text-gray-700";
-      case "preprint":
-        return "bg-red-50 text-red-700";
-      default:
-        return "bg-gray-50 text-gray-700";
-    }
-  };
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-4 mb-2">
-            <BackButton variant="back" text="Back to Dashboard" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="container-custom py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <BackButton />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Publication Management
+              </h1>
+              <p className="text-gray-600">
+                Manage research publications and papers
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Publication Management
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Manage publications and research papers
-          </p>
-        </div>
-        <Button onClick={handleAddPublication}>
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <Button
+            onClick={handleAddPublication}
+            className="flex items-center space-x-2"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Add Publication
-        </Button>
-      </div>
+            <span>+</span>
+            <span>Add Publication</span>
+          </Button>
+        </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {publications.length}
-            </div>
-            <div className="text-sm text-gray-600">Total Publications</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {publications.filter((p) => p.status === "published").length}
-            </div>
-            <div className="text-sm text-gray-600">Published</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-600 mb-2">
-              {publications.filter((p) => p.status === "under-review").length}
-            </div>
-            <div className="text-sm text-gray-600">Under Review</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
-              {publications.filter((p) => p.isFeatured).length}
-            </div>
-            <div className="text-sm text-gray-600">Featured</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-orange-600 mb-2">
-              {publications.reduce((total, p) => total + (p.citations || 0), 0)}
-            </div>
-            <div className="text-sm text-gray-600">Total Citations</div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Publications Grid */}
-      <div className="grid grid-cols-1 gap-6">
-        {publications.map((publication) => (
-          <Card key={publication.id}>
-            <div className="flex flex-col space-y-4">
-              {/* Publication Header */}
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {publication.title}
-                    </h3>
-                    {publication.isFeatured && (
-                      <span className="text-yellow-500" title="Featured">
-                        ⭐
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    <strong>Authors:</strong> {publication.authors}
-                  </p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                    <span>
-                      <strong>Journal:</strong> {publication.journal}
-                    </span>
-                    <span>
-                      <strong>Year:</strong> {publication.year}
-                    </span>
-                    {publication.citations > 0 && (
-                      <span className="text-blue-600">
-                        <strong>Citations:</strong> {publication.citations}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${getStatusColor(
-                      publication.status
-                    )}`}
-                  >
-                    {publication.status.replace("-", " ")}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${getPublicationTypeColor(
-                      publication.publicationType
-                    )}`}
-                  >
-                    {publication.publicationType.replace("-", " ")}
-                  </span>
-                </div>
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="text-red-800">
+                <strong>Error:</strong> {error}
               </div>
+              <button
+                onClick={clearError}
+                className="text-red-600 hover:text-red-800"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
-              {/* Publication Details */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                {publication.abstract && (
-                  <div className="mb-3">
-                    <strong className="text-sm text-gray-700">Abstract:</strong>
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-3">
-                      {publication.abstract}
-                    </p>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  {publication.volume && (
-                    <div>
-                      <strong>Volume:</strong> {publication.volume}
-                    </div>
-                  )}
-                  {publication.issue && (
-                    <div>
-                      <strong>Issue:</strong> {publication.issue}
-                    </div>
-                  )}
-                  {publication.pages && (
-                    <div>
-                      <strong>Pages:</strong> {publication.pages}
-                    </div>
-                  )}
-                  {publication.doi && (
-                    <div>
-                      <strong>DOI:</strong>
-                      <a
-                        href={`https://doi.org/${publication.doi}`}
-                        className="text-blue-600 hover:text-blue-700 ml-1"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {publication.doi}
-                      </a>
-                    </div>
-                  )}
-                </div>
-                {publication.keywords && (
-                  <div className="mt-3">
-                    <strong className="text-sm text-gray-700">Keywords:</strong>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {publication.keywords.split(",").map((keyword, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded"
-                        >
-                          {keyword.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditPublication(publication)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant={publication.isFeatured ? "secondary" : "outline"}
-                  onClick={() => handleToggleFeatured(publication.id)}
-                >
-                  {publication.isFeatured ? "Unfeature" : "Feature"}
-                </Button>
-                {publication.pdfUrl && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => window.open(publication.pdfUrl, "_blank")}
-                  >
-                    View PDF
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => handleDeletePublication(publication.id)}
-                >
-                  Delete
-                </Button>
-              </div>
+        {/* Publications List */}
+        {publications.length === 0 ? (
+          <Card>
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Publications Found
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Get started by adding your first publication
+              </p>
+              <Button onClick={handleAddPublication}>
+                Add Your First Publication
+              </Button>
             </div>
           </Card>
-        ))}
-      </div>
+        ) : (
+          <div className="space-y-4">
+            {publications.map((publication) => (
+              <Card key={publication._id}>
+                <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                  {/* Publication Info */}
+                  <div className="flex-1">
+                    {/* Status Indicators */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            publication.publicationType === "journal"
+                              ? "bg-blue-100 text-blue-800"
+                              : publication.publicationType === "conference"
+                              ? "bg-green-100 text-green-800"
+                              : publication.publicationType === "book-chapter"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {getTypeDisplayName(publication.publicationType)}
+                        </span>
+                        {publication.isFeatured && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                            Featured
+                          </span>
+                        )}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            publication.status === "published"
+                              ? "bg-green-100 text-green-800"
+                              : publication.status === "accepted"
+                              ? "bg-blue-100 text-blue-800"
+                              : publication.status === "under-review"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {publication.status?.charAt(0).toUpperCase() +
+                            publication.status?.slice(1) || "Unknown"}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span
+                          className={`w-3 h-3 rounded-full ${
+                            publication.isActive ? "bg-green-400" : "bg-red-400"
+                          }`}
+                        ></span>
+                        <span className="text-xs text-gray-500">
+                          {publication.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </div>
 
-      {/* Add/Edit Publication Modal */}
-      <Modal
-        isOpen={isAddModalOpen || isEditModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setIsEditModalOpen(false);
-          setEditingPublication(null);
-        }}
-        title={editingPublication ? "Edit Publication" : "Add Publication"}
-        size="xl"
-      >
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Input
-                label="Publication Title"
-                name="title"
-                value={formData.title}
-                onChange={handleFormChange}
-                required
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="Authors"
-                name="authors"
-                value={formData.authors}
-                onChange={handleFormChange}
-                placeholder="e.g., J. Smith, M. Johnson, A. Brown"
-                required
-              />
-            </div>
-            <div className="md:col-span-2">
+                    {/* Title */}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {publication.title}
+                    </h3>
+
+                    {/* Authors */}
+                    <p className="text-gray-700 font-medium mb-2">
+                      {formatAuthors(publication.authors)}
+                    </p>
+
+                    {/* Publication Details */}
+                    <div className="text-gray-600 mb-3">
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        {publication.journal && (
+                          <span>
+                            <strong>Journal:</strong> {publication.journal}
+                          </span>
+                        )}
+                        {publication.year && (
+                          <span>
+                            <strong>Year:</strong> {publication.year}
+                          </span>
+                        )}
+                        {publication.volume && (
+                          <span>
+                            <strong>Vol:</strong> {publication.volume}
+                          </span>
+                        )}
+                        {publication.issue && (
+                          <span>
+                            <strong>Issue:</strong> {publication.issue}
+                          </span>
+                        )}
+                        {publication.pages && (
+                          <span>
+                            <strong>Pages:</strong> {publication.pages}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Abstract */}
+                    {publication.abstract && (
+                      <p className="text-gray-600 mb-3">
+                        {truncateText(publication.abstract, 200)}
+                      </p>
+                    )}
+
+                    {/* DOI and PDF Links */}
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      {publication.doi && (
+                        <a
+                          href={`https://doi.org/${publication.doi}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <strong>DOI:</strong> {publication.doi}
+                        </a>
+                      )}
+                      {publication.pdfUrl && (
+                        <a
+                          href={publication.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          View PDF
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-2 lg:w-48">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditPublication(publication)}
+                      className="w-full"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant={publication.isFeatured ? "solid" : "outline"}
+                      size="sm"
+                      onClick={() => handleToggleFeatured(publication)}
+                      className="w-full"
+                    >
+                      {publication.isFeatured ? "★ Featured" : "☆ Feature"}
+                    </Button>
+                    <Button
+                      variant={publication.isActive ? "solid" : "outline"}
+                      size="sm"
+                      onClick={() => handleToggleStatus(publication)}
+                      className="w-full"
+                    >
+                      {publication.isActive ? "● Active" : "○ Inactive"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeletePublication(publication._id)}
+                      className="w-full text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Add/Edit Publication Modal */}
+        <Modal
+          isOpen={isAddModalOpen || isEditModalOpen}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setIsEditModalOpen(false);
+            setEditingPublication(null);
+          }}
+          title={
+            editingPublication ? "Edit Publication" : "Add New Publication"
+          }
+          size="lg"
+        >
+          <div className="space-y-6">
+            {/* Title */}
+            <Input
+              label="Publication Title *"
+              name="title"
+              value={formData.title}
+              onChange={handleFormChange}
+              placeholder="Enter publication title"
+              required
+            />
+
+            {/* Authors */}
+            <Input
+              label="Authors *"
+              name="authors"
+              value={formData.authors}
+              onChange={handleFormChange}
+              placeholder="Enter authors separated by commas"
+              required
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Publication Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Publication Type
+                </label>
+                <select
+                  name="publicationType"
+                  value={formData.publicationType}
+                  onChange={handleFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {publicationTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {getTypeDisplayName(type)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Journal */}
               <Input
                 label="Journal/Conference"
                 name="journal"
                 value={formData.journal}
                 onChange={handleFormChange}
-                required
+                placeholder="Enter journal or conference name"
               />
-            </div>
-            <div>
+
+              {/* Year */}
               <Input
                 label="Year"
                 name="year"
                 type="number"
                 value={formData.year}
                 onChange={handleFormChange}
+                placeholder="2024"
                 min="1900"
-                max="2030"
-                required
+                max="2100"
+              />
+
+              {/* Volume */}
+              <Input
+                label="Volume"
+                name="volume"
+                value={formData.volume}
+                onChange={handleFormChange}
+                placeholder="Volume number"
+              />
+
+              {/* Issue */}
+              <Input
+                label="Issue"
+                name="issue"
+                value={formData.issue}
+                onChange={handleFormChange}
+                placeholder="Issue number"
+              />
+
+              {/* Pages */}
+              <Input
+                label="Pages"
+                name="pages"
+                value={formData.pages}
+                onChange={handleFormChange}
+                placeholder="e.g., 123-145"
+              />
+
+              {/* DOI */}
+              <Input
+                label="DOI"
+                name="doi"
+                value={formData.doi}
+                onChange={handleFormChange}
+                placeholder="e.g., 10.1000/182"
               />
             </div>
+
+            {/* Abstract */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Publication Type
+                Abstract
               </label>
-              <select
-                name="publicationType"
-                value={formData.publicationType}
+              <textarea
+                name="abstract"
+                value={formData.abstract}
                 onChange={handleFormChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {publicationTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type
-                      .replace("-", " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+                rows="6"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter publication abstract"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+
+            {/* Keywords */}
+            <Input
+              label="Keywords"
+              name="keywords"
+              value={formData.keywords}
+              onChange={handleFormChange}
+              placeholder="Enter keywords separated by commas"
+            />
+
+            {/* PDF URL */}
+            <Input
+              label="PDF URL"
+              name="pdfUrl"
+              type="url"
+              value={formData.pdfUrl}
+              onChange={handleFormChange}
+              placeholder="https://example.com/paper.pdf"
+            />
+
+            {/* Checkboxes */}
+            <div className="flex items-center space-x-6">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={handleFormChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Featured Publication
+                </span>
               </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleFormChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {statusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {status
-                      .replace("-", " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Input
-              label="Volume"
-              name="volume"
-              value={formData.volume}
-              onChange={handleFormChange}
-            />
-            <Input
-              label="Issue"
-              name="issue"
-              value={formData.issue}
-              onChange={handleFormChange}
-            />
-            <Input
-              label="Pages"
-              name="pages"
-              value={formData.pages}
-              onChange={handleFormChange}
-              placeholder="e.g., 123-145"
-            />
-            <Input
-              label="DOI"
-              name="doi"
-              value={formData.doi}
-              onChange={handleFormChange}
-              placeholder="e.g., 10.1016/j.example.2024.123456"
-            />
-            <div className="md:col-span-2">
-              <Input
-                label="Keywords"
-                name="keywords"
-                value={formData.keywords}
-                onChange={handleFormChange}
-                placeholder="e.g., Fluid mechanics, CFD, Simulation"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="PDF URL"
-                name="pdfUrl"
-                value={formData.pdfUrl}
-                onChange={handleFormChange}
-                placeholder="https://example.com/publication.pdf"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Abstract
-            </label>
-            <textarea
-              name="abstract"
-              value={formData.abstract}
-              onChange={handleFormChange}
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Publication abstract..."
-            />
-          </div>
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleFormChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 text-sm text-gray-700">
-                Featured publication
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleFormChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 text-sm text-gray-700">
-                Active publication
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleFormChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Active
+                </span>
               </label>
             </div>
           </div>
-          <div className="flex justify-end space-x-3">
+
+          {/* Modal Actions */}
+          <div className="flex justify-end space-x-4 mt-8">
             <Button
               variant="outline"
               onClick={() => {
@@ -691,15 +730,27 @@ const PublicationManagement = () => {
                 setIsEditModalOpen(false);
                 setEditingPublication(null);
               }}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button onClick={handleSavePublication}>
-              {editingPublication ? "Update Publication" : "Add Publication"}
+            <Button
+              onClick={handleSavePublication}
+              disabled={isSubmitting}
+              className="flex items-center space-x-2"
+            >
+              {isSubmitting && <LoadingSpinner size="sm" />}
+              <span>
+                {isSubmitting
+                  ? "Saving..."
+                  : editingPublication
+                  ? "Update Publication"
+                  : "Create Publication"}
+              </span>
             </Button>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
     </div>
   );
 };

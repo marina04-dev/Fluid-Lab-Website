@@ -521,6 +521,48 @@ export function ContentProvider({ children }) {
     [handleError]
   );
 
+  // Fetch single project by ID
+  const fetchProjectById = useCallback(
+    async (id) => {
+      dispatch({ type: ContentActionTypes.SET_LOADING, payload: true });
+
+      try {
+        const response = await api.get(`/projects/${id}`);
+        // Don't update the projects array, just return the project
+        dispatch({ type: ContentActionTypes.SET_LOADING, payload: false });
+        return { success: true, data: response.data };
+      } catch (error) {
+        handleError(error);
+        return {
+          success: false,
+          error: error.response?.data?.message || error.message,
+        };
+      }
+    },
+    [handleError]
+  );
+
+  // Fetch single publication by ID
+  const fetchPublicationById = useCallback(
+    async (id) => {
+      dispatch({ type: ContentActionTypes.SET_LOADING, payload: true });
+
+      try {
+        const response = await api.get(`/publications/${id}`);
+        // Don't update the publications array, just return the publication
+        dispatch({ type: ContentActionTypes.SET_LOADING, payload: false });
+        return { success: true, data: response.data };
+      } catch (error) {
+        handleError(error);
+        return {
+          success: false,
+          error: error.response?.data?.message || error.message,
+        };
+      }
+    },
+    [handleError]
+  );
+
   const value = {
     ...state,
     // Data fetching
@@ -545,11 +587,13 @@ export function ContentProvider({ children }) {
     createProject,
     updateProject,
     deleteProject,
+    fetchProjectById,
 
     // Publication operations
     createPublication,
     updatePublication,
     deletePublication,
+    fetchPublicationById,
   };
 
   return (

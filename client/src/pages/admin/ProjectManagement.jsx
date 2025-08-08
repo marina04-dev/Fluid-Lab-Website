@@ -1,15 +1,26 @@
-// client/src/pages/admin/ProjectManagement.jsx
 import React, { useState, useEffect } from "react";
+import { useContent } from "../../contexts/ContentContext";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import Modal from "../../components/common/Modal";
 import BackButton from "../../components/common/BackButton";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 
 const ProjectManagement = () => {
-  // state variables to handle projects display
-  const [projects, setProjects] = useState([]);
+  // get context's necessary variables/functions
+  const {
+    projects,
+    fetchProjects,
+    createProject,
+    updateProject,
+    deleteProject,
+    loading,
+    error,
+    clearError,
+  } = useContent();
+
   // state variables to handle add project modal display
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   // state variables to handle edit project modal display
@@ -31,8 +42,10 @@ const ProjectManagement = () => {
     images: "",
     isActive: true,
   });
+  // state variable to track submitting status
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // hard coded project categories
+  // project categories options
   const categories = [
     "magnetohydrodynamics",
     "turbomachinery",
@@ -45,85 +58,29 @@ const ProjectManagement = () => {
     "fluid-structure-interaction",
   ];
 
-  // hard coded project status options
+  // project status options
   const statusOptions = ["active", "completed", "planned", "on-hold"];
 
-  // Mock data για demo
+  // Load projects on component mount using API call from context
   useEffect(() => {
-    const mockProjects = [
-      {
-        id: 1,
-        title: "Advanced CFD Modeling of Turbulent Flows",
-        shortDescription:
-          "Development of advanced computational models for complex turbulent flow scenarios.",
-        description:
-          "This project focuses on creating sophisticated computational fluid dynamics models that can accurately predict turbulent flow behavior in various industrial applications. We utilize state-of-the-art numerical methods and validation against experimental data.",
-        category: "turbulence",
-        status: "active",
-        startDate: "2024-01-15",
-        endDate: "2024-12-31",
-        teamMembers: "Dr. Maria Papadakis, Dr. Nikos Georgiadis",
-        tags: "CFD, Turbulence, Modeling, Simulation",
-        isFeatured: true,
-        images:
-          "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop",
-        isActive: true,
-        createdAt: "2024-01-15",
-      },
-      {
-        id: 2,
-        title: "Biofluid Mechanics in Cardiovascular Systems",
-        shortDescription:
-          "Investigation of blood flow dynamics in cardiovascular applications.",
-        description:
-          "Research into the complex fluid mechanics of blood flow within the cardiovascular system, including the development of patient-specific models for medical applications.",
-        category: "bioengineering",
-        status: "active",
-        startDate: "2024-02-01",
-        endDate: "2024-11-30",
-        teamMembers: "Dr. Anna Christou, Dr. Maria Papadakis",
-        tags: "Bioengineering, Medical, Blood Flow, Cardiovascular",
-        isFeatured: true,
-        images:
-          "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop",
-        isActive: true,
-        createdAt: "2024-02-01",
-      },
-      {
-        id: 3,
-        title: "Heat Transfer Optimization in Industrial Systems",
-        shortDescription:
-          "Optimization of heat transfer processes in industrial equipment.",
-        description:
-          "Development of optimization strategies for heat transfer enhancement in various industrial systems, focusing on energy efficiency and performance improvements.",
-        category: "thermal-analysis",
-        status: "completed",
-        startDate: "2023-06-01",
-        endDate: "2024-01-31",
-        teamMembers: "Dr. Nikos Georgiadis",
-        tags: "Heat Transfer, Optimization, Industrial, Energy Efficiency",
-        isFeatured: false,
-        images:
-          "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop",
-        isActive: true,
-        createdAt: "2023-06-01",
-      },
-    ];
-    setProjects(mockProjects);
-  }, []);
+    fetchProjects();
+  }, [fetchProjects]);
 
-  // function to handle form inputs
+  // Clear errors on component mount
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // function to handle form inputs change
   const handleFormChange = (e) => {
-    // get the name, value, type, checked from event
     const { name, value, type, checked } = e.target;
-    // provide the data in the setter function
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle add project modal opening
   const handleAddProject = () => {
     setFormData({
       title: "",
@@ -139,432 +96,535 @@ const ProjectManagement = () => {
       images: "",
       isActive: true,
     });
+    setEditingProject(null);
     setIsAddModalOpen(true);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
+  // function to handle edit project modal opening
   const handleEditProject = (project) => {
     setEditingProject(project);
     setFormData({
-      title: project.title,
-      shortDescription: project.shortDescription,
-      description: project.description,
-      category: project.category,
-      status: project.status,
-      startDate: project.startDate,
-      endDate: project.endDate,
-      teamMembers: project.teamMembers,
-      tags: project.tags,
-      isFeatured: project.isFeatured,
-      images: project.images,
-      isActive: project.isActive,
+      title: project.title || "",
+      shortDescription: project.shortDescription || "",
+      description: project.description || "",
+      category: project.category || "",
+      status: project.status || "active",
+      startDate: project.startDate ? project.startDate.split("T")[0] : "",
+      endDate: project.endDate ? project.endDate.split("T")[0] : "",
+      teamMembers: Array.isArray(project.teamMembers)
+        ? project.teamMembers
+            .map((m) => (typeof m === "string" ? m : m.name || m.email || ""))
+            .join(", ")
+        : project.teamMembers || "",
+      tags: Array.isArray(project.tags)
+        ? project.tags.join(", ")
+        : project.tags || "",
+      isFeatured: project.isFeatured || false,
+      images: Array.isArray(project.images)
+        ? project.images.join(", ")
+        : project.images || "",
+      isActive: project.isActive !== undefined ? project.isActive : true,
     });
     setIsEditModalOpen(true);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleSaveProject = () => {
-    if (editingProject) {
-      // Update existing project
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === editingProject.id
-            ? { ...project, ...formData }
-            : project
-        )
-      );
-      toast.success("Project updated successfully!");
-      setIsEditModalOpen(false);
-    } else {
-      // Add new project
-      const newProject = {
-        id: Date.now(),
+  // function to handle project save (create or update) using API calls from context
+  const handleSaveProject = async () => {
+    // Basic validation
+    if (!formData.title.trim()) {
+      toast.error("Project title is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare data for API
+      const projectData = {
         ...formData,
-        createdAt: new Date().toISOString().split("T")[0],
+        // Convert comma-separated strings to arrays where needed
+        teamMembers: formData.teamMembers
+          ? formData.teamMembers
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item)
+          : [],
+        tags: formData.tags
+          ? formData.tags
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item)
+          : [],
+        images: formData.images
+          ? formData.images
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item)
+          : [],
       };
-      setProjects((prev) => [...prev, newProject]);
-      toast.success("New project added successfully!");
-      setIsAddModalOpen(false);
+
+      let result;
+      if (editingProject) {
+        // Update existing project using context function
+        result = await updateProject(editingProject._id, projectData);
+      } else {
+        // Create new project using context function
+        result = await createProject(projectData);
+      }
+
+      if (result.success) {
+        toast.success(
+          editingProject
+            ? "Project updated successfully!"
+            : "Project created successfully!"
+        );
+        setIsEditModalOpen(false);
+        setIsAddModalOpen(false);
+        setEditingProject(null);
+        // Refresh projects list
+        fetchProjects();
+      } else {
+        toast.error(result.error || "Failed to save project");
+      }
+    } catch (error) {
+      console.error("Error saving project:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
-    setEditingProject(null);
   };
 
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleDeleteProject = (id) => {
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      setProjects((prev) => prev.filter((project) => project.id !== id));
-      toast.success("Project deleted successfully!");
-    }
-  };
-
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleToggleStatus = (id) => {
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === id
-          ? { ...project, isActive: !project.isActive }
-          : project
+  // function to handle project deletion using API call from context
+  const handleDeleteProject = async (projectId) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this project? This action cannot be undone."
       )
-    );
-    toast.success("Project status updated!");
-  };
-
-  // TODO: the above functions need to be implemented to do api calls to get real data
-  const handleToggleFeatured = (id) => {
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === id
-          ? { ...project, isFeatured: !project.isFeatured }
-          : project
-      )
-    );
-    toast.success("Featured status updated!");
-  };
-
-  // project status color
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-700";
-      case "completed":
-        return "bg-blue-100 text-blue-700";
-      case "planned":
-        return "bg-yellow-100 text-yellow-700";
-      case "on-hold":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
+    ) {
+      try {
+        const result = await deleteProject(projectId);
+        if (result.success) {
+          toast.success("Project deleted successfully!");
+          // Refresh projects list
+          fetchProjects();
+        } else {
+          toast.error(result.error || "Failed to delete project");
+        }
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        toast.error("An unexpected error occurred");
+      }
     }
   };
+
+  // function to handle project status toggle using API call from context
+  const handleToggleStatus = async (project) => {
+    try {
+      const result = await updateProject(project._id, {
+        ...project,
+        isActive: !project.isActive,
+      });
+
+      if (result.success) {
+        toast.success("Project status updated!");
+        // Refresh projects list
+        fetchProjects();
+      } else {
+        toast.error(result.error || "Failed to update project status");
+      }
+    } catch (error) {
+      console.error("Error updating project status:", error);
+      toast.error("An unexpected error occurred");
+    }
+  };
+
+  // function to handle featured status toggle using API call from context
+  const handleToggleFeatured = async (project) => {
+    try {
+      const result = await updateProject(project._id, {
+        ...project,
+        isFeatured: !project.isFeatured,
+      });
+
+      if (result.success) {
+        toast.success("Featured status updated!");
+        // Refresh projects list
+        fetchProjects();
+      } else {
+        toast.error(result.error || "Failed to update featured status");
+      }
+    } catch (error) {
+      console.error("Error updating featured status:", error);
+      toast.error("An unexpected error occurred");
+    }
+  };
+
+  // function to format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  // function to truncate text for display
+  const truncateText = (text, maxLength = 100) => {
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
+  // if projects management page is slow display loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading projects..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-4 mb-2">
-            <BackButton variant="back" text="Back to Dashboard" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="container-custom py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <BackButton />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Project Management
+              </h1>
+              <p className="text-gray-600">
+                Manage research projects and their details
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Project Management
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Manage research projects and publications
-          </p>
-        </div>
-        <Button onClick={handleAddProject}>
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <Button
+            onClick={handleAddProject}
+            className="flex items-center space-x-2"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Add Project
-        </Button>
-      </div>
+            <span>+</span>
+            <span>Add Project</span>
+          </Button>
+        </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {projects.length}
-            </div>
-            <div className="text-sm text-gray-600">Total Projects</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {projects.filter((p) => p.status === "active").length}
-            </div>
-            <div className="text-sm text-gray-600">Active</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {projects.filter((p) => p.status === "completed").length}
-            </div>
-            <div className="text-sm text-gray-600">Completed</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-600 mb-2">
-              {projects.filter((p) => p.status === "planned").length}
-            </div>
-            <div className="text-sm text-gray-600">Planned</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
-              {projects.filter((p) => p.isFeatured).length}
-            </div>
-            <div className="text-sm text-gray-600">Featured</div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {projects.map((project) => (
-          <Card key={project.id}>
-            <div className="flex flex-col space-y-4">
-              {/* Project Image & Title */}
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <img
-                    src={project.images || "https://via.placeholder.com/80x60"}
-                    alt={project.title}
-                    className="w-20 h-15 rounded-lg object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
-                      {project.title}
-                    </h3>
-                    <div className="flex items-center space-x-2 ml-2">
-                      {project.isFeatured && (
-                        <span className="text-yellow-500" title="Featured">
-                          ⭐
-                        </span>
-                      )}
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          project.isActive ? "bg-green-500" : "bg-gray-400"
-                        }`}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {project.shortDescription}
-                  </p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <span
-                      className={`px-2 py-1 rounded ${getStatusColor(
-                        project.status
-                      )}`}
-                    >
-                      {project.status}
-                    </span>
-                    <span>{project.category.replace("-", " ")}</span>
-                  </div>
-                </div>
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="text-red-800">
+                <strong>Error:</strong> {error}
               </div>
+              <button
+                onClick={clearError}
+                className="text-red-600 hover:text-red-800"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
 
-              {/* Project Details */}
-              <div className="space-y-2 text-sm">
-                <div>
-                  <strong>Team:</strong> {project.teamMembers}
-                </div>
-                <div>
-                  <strong>Period:</strong> {project.startDate} -{" "}
-                  {project.endDate}
-                </div>
-                <div>
-                  <strong>Tags:</strong> {project.tags}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEditProject(project)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant={project.isFeatured ? "secondary" : "outline"}
-                  onClick={() => handleToggleFeatured(project.id)}
-                >
-                  {project.isFeatured ? "Unfeature" : "Feature"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={project.isActive ? "outline" : "secondary"}
-                  onClick={() => handleToggleStatus(project.id)}
-                >
-                  {project.isActive ? "Deactivate" : "Activate"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => handleDeleteProject(project.id)}
-                >
-                  Delete
-                </Button>
-              </div>
+        {/* Projects List */}
+        {projects.length === 0 ? (
+          <Card>
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Projects Found
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Get started by adding your first project
+              </p>
+              <Button onClick={handleAddProject}>Add Your First Project</Button>
             </div>
           </Card>
-        ))}
-      </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => (
+              <Card key={project._id}>
+                <div className="flex flex-col h-full">
+                  {/* Project Status Indicators */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          project.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : project.status === "completed"
+                            ? "bg-blue-100 text-blue-800"
+                            : project.status === "planned"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {project.status?.charAt(0).toUpperCase() +
+                          project.status?.slice(1) || "Unknown"}
+                      </span>
+                      {project.isFeatured && (
+                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          project.isActive ? "bg-green-400" : "bg-red-400"
+                        }`}
+                      ></span>
+                      <span className="text-xs text-gray-500">
+                        {project.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  </div>
 
-      {/* Add/Edit Project Modal */}
-      <Modal
-        isOpen={isAddModalOpen || isEditModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setIsEditModalOpen(false);
-          setEditingProject(null);
-        }}
-        title={editingProject ? "Edit Project" : "Add Project"}
-        size="xl"
-      >
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Input
-                label="Project Title"
-                name="title"
-                value={formData.title}
-                onChange={handleFormChange}
-                required
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="Short Description"
+                  {/* Project Title */}
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {project.title}
+                  </h3>
+
+                  {/* Project Description */}
+                  <p className="text-gray-600 mb-4 flex-1">
+                    {truncateText(
+                      project.shortDescription || project.description
+                    )}
+                  </p>
+
+                  {/* Project Details */}
+                  <div className="space-y-2 mb-4 text-sm text-gray-500">
+                    {project.category && (
+                      <div>
+                        <strong>Category:</strong>{" "}
+                        {project.category.replace(/-/g, " ")}
+                      </div>
+                    )}
+                    {project.startDate && (
+                      <div>
+                        <strong>Started:</strong>{" "}
+                        {formatDate(project.startDate)}
+                      </div>
+                    )}
+                    {project.endDate && (
+                      <div>
+                        <strong>End Date:</strong> {formatDate(project.endDate)}
+                      </div>
+                    )}
+                    <div>
+                      <strong>Created:</strong> {formatDate(project.createdAt)}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditProject(project)}
+                      className="flex-1"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant={project.isFeatured ? "solid" : "outline"}
+                      size="sm"
+                      onClick={() => handleToggleFeatured(project)}
+                    >
+                      {project.isFeatured ? "★" : "☆"}
+                    </Button>
+                    <Button
+                      variant={project.isActive ? "solid" : "outline"}
+                      size="sm"
+                      onClick={() => handleToggleStatus(project)}
+                    >
+                      {project.isActive ? "●" : "○"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteProject(project._id)}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Add/Edit Project Modal */}
+        <Modal
+          isOpen={isAddModalOpen || isEditModalOpen}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setIsEditModalOpen(false);
+            setEditingProject(null);
+          }}
+          title={editingProject ? "Edit Project" : "Add New Project"}
+          size="lg"
+        >
+          <div className="space-y-6">
+            {/* Title */}
+            <Input
+              label="Project Title *"
+              name="title"
+              value={formData.title}
+              onChange={handleFormChange}
+              placeholder="Enter project title"
+              required
+            />
+
+            {/* Short Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Short Description *
+              </label>
+              <textarea
                 name="shortDescription"
                 value={formData.shortDescription}
                 onChange={handleFormChange}
+                rows="3"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Brief project description for listings"
                 required
               />
             </div>
+
+            {/* Full Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                Full Description
               </label>
-              <select
-                name="category"
-                value={formData.category}
+              <textarea
+                name="description"
+                value={formData.description}
                 onChange={handleFormChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat
-                      .replace("-", " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+                rows="6"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Detailed project description"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category
+                        .replace(/-/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleFormChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Start Date */}
+              <Input
+                label="Start Date"
+                name="startDate"
+                type="date"
+                value={formData.startDate}
                 onChange={handleFormChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {statusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {status
-                      .replace("-", " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+              />
+
+              {/* End Date */}
+              <Input
+                label="End Date"
+                name="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={handleFormChange}
+              />
             </div>
+
+            {/* Team Members */}
             <Input
-              label="Start Date"
-              name="startDate"
-              type="date"
-              value={formData.startDate}
+              label="Team Members"
+              name="teamMembers"
+              value={formData.teamMembers}
               onChange={handleFormChange}
+              placeholder="Enter team member names separated by commas"
             />
+
+            {/* Tags */}
             <Input
-              label="End Date"
-              name="endDate"
-              type="date"
-              value={formData.endDate}
+              label="Tags"
+              name="tags"
+              value={formData.tags}
               onChange={handleFormChange}
+              placeholder="Enter tags separated by commas"
             />
-            <div className="md:col-span-2">
-              <Input
-                label="Team Members"
-                name="teamMembers"
-                value={formData.teamMembers}
-                onChange={handleFormChange}
-                placeholder="e.g., Dr. John Doe, Dr. Jane Smith"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="Tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleFormChange}
-                placeholder="e.g., CFD, Simulation, Research"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="Image URL"
-                name="images"
-                value={formData.images}
-                onChange={handleFormChange}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
+
+            {/* Images */}
+            <Input
+              label="Image URLs"
+              name="images"
+              value={formData.images}
               onChange={handleFormChange}
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Detailed project description..."
+              placeholder="Enter image URLs separated by commas"
             />
-          </div>
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleFormChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 text-sm text-gray-700">
-                Featured project
+
+            {/* Checkboxes */}
+            <div className="flex items-center space-x-6">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={handleFormChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Featured Project
+                </span>
               </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleFormChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 text-sm text-gray-700">
-                Active project
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleFormChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Active
+                </span>
               </label>
             </div>
           </div>
-          <div className="flex justify-end space-x-3">
+
+          {/* Modal Actions */}
+          <div className="flex justify-end space-x-4 mt-8">
             <Button
               variant="outline"
               onClick={() => {
@@ -572,15 +632,27 @@ const ProjectManagement = () => {
                 setIsEditModalOpen(false);
                 setEditingProject(null);
               }}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button onClick={handleSaveProject}>
-              {editingProject ? "Update Project" : "Add Project"}
+            <Button
+              onClick={handleSaveProject}
+              disabled={isSubmitting}
+              className="flex items-center space-x-2"
+            >
+              {isSubmitting && <LoadingSpinner size="sm" />}
+              <span>
+                {isSubmitting
+                  ? "Saving..."
+                  : editingProject
+                  ? "Update Project"
+                  : "Create Project"}
+              </span>
             </Button>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
     </div>
   );
 };

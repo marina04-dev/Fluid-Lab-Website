@@ -106,7 +106,7 @@ The API server will start on `http://localhost:5000`
 
 ```bash
 cd client
-npm start
+npm run dev
 ```
 
 The React app will start on `http://localhost:3000`

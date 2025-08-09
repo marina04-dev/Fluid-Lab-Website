@@ -322,7 +322,7 @@ const About = () => {
       </section>
 
       {/* Contact CTA Section */}
-      <section className="section-padding bg-purple-600">
+      <section className="section-padding bg-[#8b7bc7]">
         <div className="container-custom">
           <div className="text-center text-white">
             <h2 className="text-3xl font-bold mb-6">

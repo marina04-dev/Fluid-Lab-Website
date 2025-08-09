@@ -397,7 +397,7 @@ const TeamManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditMember(member)}
-                      className="flex-1"
+                      className="flex-1 text-purple-600"
                     >
                       Edit
                     </Button>
@@ -531,6 +531,7 @@ const TeamManagement = () => {
                 setEditingMember(null);
               }}
               disabled={isSubmitting}
+              className="text-purple-600"
             >
               Cancel
             </Button>

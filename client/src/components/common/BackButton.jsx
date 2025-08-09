@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 const BackButton = ({
   to = "/",
-  text = "Back to Home",
+  text = "Back Home",
   greekText = "Επιστροφή στην Αρχική",
   className = "",
   showIcon = true,
@@ -39,7 +39,7 @@ const BackButton = ({
     return (
       <button
         onClick={handleGoBack}
-        className={`${baseClasses} text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-blue-200 shadow-sm`}
+        className={`${baseClasses} text-purple-600 hover:text-purple-700 hover:bg-blue-50 bg-white border border-blue-200 shadow-sm`}
         type="button"
       >
         {showIcon && (
@@ -67,7 +67,7 @@ const BackButton = ({
   return (
     <Link
       to={to}
-      className={`${baseClasses} text-blue-600 hover:text-blue-700 hover:bg-blue-50 bg-white border border-blue-200 shadow-sm`}
+      className={`${baseClasses} text-purple-600 hover:text-purple-700 hover:bg-blue-50 bg-white border border-blue-200 shadow-sm`}
     >
       {showIcon && (
         <svg

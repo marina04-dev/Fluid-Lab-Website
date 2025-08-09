@@ -6,29 +6,43 @@ const { auth, authorize } = require("../middleware/auth");
 const router = express.Router();
 
 // @route GET /api/projects
-// @desc Get all active projects
+// @desc Get all active projects with limit support
 // @access Public
 router.get("/", async (req, res) => {
   try {
-    // extract query's values
-    const { category, status, featured } = req.query;
+    // extract query's values including new limit parameter
+    const { category, status, featured, limit } = req.query;
 
     // set the query's object isActive property to true
     let query = { isActive: true };
+
     // add the category property with the query's value to the query object if provided
     if (category) query.category = category;
+
     // add the status property with the query's value to the query object if provided
     if (status) query.status = status;
+
     // add the featured property with the query's value to the query object if provided
     if (featured === "true") query.isFeatured = true;
 
-    // find all projects that match the provided query & sort them by creation date
-    const projects = await Project.find(query)
+    // Build the query with population and sorting
+    let projectsQuery = Project.find(query)
       .populate("teamMembers", "name position image")
       .populate("publications", "title authors year journal")
       .sort({ isFeatured: -1, createdAt: -1 });
 
-    // return the publications we have found to the response
+    // Apply limit if provided (convert to number and ensure it's positive)
+    if (limit) {
+      const limitNum = parseInt(limit);
+      if (limitNum > 0) {
+        projectsQuery = projectsQuery.limit(limitNum);
+      }
+    }
+
+    // Execute the query
+    const projects = await projectsQuery;
+
+    // return the projects we have found to the response
     res.json(projects);
   } catch (error) {
     console.error("Get projects error:", error);
@@ -46,12 +60,12 @@ router.get("/:id", async (req, res) => {
       .populate("teamMembers", "name position image email expertise")
       .populate("publications");
 
-    // check if no project with this id exists or the project with this id is not active
+    // check if no project with this id exists or the project is not active
     if (!project || !project.isActive) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // return the project found to the response
+    // return the project we have found to the response
     res.json(project);
   } catch (error) {
     console.error("Get project error:", error);
@@ -67,43 +81,45 @@ router.post(
   [
     auth,
     authorize("admin", "editor"),
-    body("title").notEmpty().trim(),
-    body("description").notEmpty().trim(),
-    body("category").isIn([
-      "magnetohydrodynamics",
-      "turbomachinery",
-      "bioengineering",
-      "thermal-analysis",
-      "turbulence",
-      "multiphase-flow",
-      "industrial-applications",
-      "environmental-applications",
-      "fluid-structure-interaction",
-    ]),
-    body("startDate").isISO8601(),
+    // Validation rules for project creation
+    body("title").notEmpty().trim().withMessage("Title is required"),
+    body("description")
+      .notEmpty()
+      .trim()
+      .withMessage("Description is required"),
+    body("category")
+      .isIn([
+        "fluid-dynamics",
+        "heat-transfer",
+        "computational",
+        "experimental",
+        "theoretical",
+      ])
+      .withMessage("Invalid category"),
+    body("status")
+      .isIn(["planning", "active", "completed", "paused"])
+      .withMessage("Invalid status"),
   ],
   async (req, res) => {
     try {
-      // check if errors have occured
+      // check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
 
-      // create new Project instance with the data from the request's body
+      // create a new project using the data from request's body
       const project = new Project(req.body);
-      // save the newly created project to the database
       await project.save();
 
-      // find the project with the id with which it has been saved to the database & populate with the needed extra info
-      const populatedProject = await Project.findById(project._id)
-        .populate("teamMembers", "name position image")
-        .populate("publications", "title authors year");
+      // populate the project before sending response
+      await project.populate("teamMembers", "name position image");
+      await project.populate("publications", "title authors year");
 
-      // return success response & the newly created & populated project
+      // return success response with the newly created project
       res.status(201).json({
         message: "Project created successfully",
-        project: populatedProject,
+        project,
       });
     } catch (error) {
       console.error("Create project error:", error);

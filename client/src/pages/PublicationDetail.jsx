@@ -392,7 +392,7 @@ const PublicationDetail = () => {
                   <div className="space-y-3">
                     <Link
                       to="/publications"
-                      className="w-full btn btn-outline text-center block"
+                      className="w-full btn btn-outline text-purple-600 text-center block"
                     >
                       ← Back to All Publications
                     </Link>
@@ -413,7 +413,7 @@ const PublicationDetail = () => {
                         href={`https://doi.org/${publication.doi}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full btn btn-outline text-center block"
+                        className="w-full btn text-purple-600 btn-outline text-center block"
                       >
                         View on Publisher
                       </a>
@@ -421,7 +421,7 @@ const PublicationDetail = () => {
 
                     <Link
                       to="/contact"
-                      className="w-full btn btn-outline text-center block"
+                      className="w-full btn btn-outline text-center text-purple-600 block"
                     >
                       Contact About This Work
                     </Link>

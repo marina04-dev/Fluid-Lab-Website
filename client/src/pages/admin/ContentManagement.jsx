@@ -378,6 +378,11 @@ const ContentManagement = () => {
           <div className="mt-4 text-sm text-gray-600">
             Showing {filteredItems.length} of {contentItems.length} content
             items
+            <div className="flex flex-row gap-10 w-full">
+              <Button className="flex items-center space-x-2 mt-3">
+                Search
+              </Button>
+            </div>
           </div>
         </Card>
 
@@ -460,7 +465,7 @@ const ContentManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditClick(item)}
-                      className="flex-1"
+                      className="flex-1 text-purple-600"
                     >
                       Edit
                     </Button>
@@ -573,6 +578,7 @@ const ContentManagement = () => {
                 setEditingContent(null);
               }}
               disabled={isSubmitting}
+              className="text-purple-600"
             >
               Cancel
             </Button>
@@ -674,6 +680,7 @@ const ContentManagement = () => {
               variant="outline"
               onClick={() => setIsAddModalOpen(false)}
               disabled={isSubmitting}
+              className="text-purple-600"
             >
               Cancel
             </Button>

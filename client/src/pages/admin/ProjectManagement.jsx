@@ -419,7 +419,7 @@ const ProjectManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditProject(project)}
-                      className="flex-1"
+                      className="flex-1 text-purple-600"
                     >
                       Edit
                     </Button>
@@ -427,6 +427,9 @@ const ProjectManagement = () => {
                       variant={project.isFeatured ? "solid" : "outline"}
                       size="sm"
                       onClick={() => handleToggleFeatured(project)}
+                      className={`${
+                        project.isFeatured ? "text-white" : "text-purple-600"
+                      }`}
                     >
                       {project.isFeatured ? "★" : "☆"}
                     </Button>

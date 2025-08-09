@@ -408,6 +408,9 @@ const MessageManagement = () => {
             Showing {filteredMessages.length} of {messages.length} messages on
             this page
           </div>
+          <div>
+            <Button className="mt-3">Search</Button>
+          </div>
         </Card>
 
         {/* Messages List */}
@@ -484,7 +487,7 @@ const MessageManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewMessage(message)}
-                      className="w-full"
+                      className="w-full text-purple-600"
                     >
                       View
                     </Button>
@@ -493,7 +496,7 @@ const MessageManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleReplyMessage(message)}
-                      className="w-full"
+                      className="w-full text-purple-600"
                     >
                       {message.response ? "Edit Reply" : "Reply"}
                     </Button>
@@ -503,7 +506,7 @@ const MessageManagement = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleMarkAsRead(message.id)}
-                        className="w-full"
+                        className="w-full text-purple-600"
                       >
                         Mark Read
                       </Button>
@@ -535,6 +538,7 @@ const MessageManagement = () => {
                 setPagination((prev) => ({ ...prev, currentPage: newPage }));
                 fetchMessages(newPage);
               }}
+              className="text-purple-600"
             >
               Previous
             </Button>
@@ -553,6 +557,7 @@ const MessageManagement = () => {
                 setPagination((prev) => ({ ...prev, currentPage: newPage }));
                 fetchMessages(newPage);
               }}
+              className="text-purple-600"
             >
               Next
             </Button>
@@ -708,6 +713,7 @@ const MessageManagement = () => {
                 setReplyText("");
               }}
               disabled={isSubmitting}
+              className="text-purple-600"
             >
               Cancel
             </Button>

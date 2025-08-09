@@ -6,28 +6,65 @@ const { auth, authorize } = require("../middleware/auth");
 const router = express.Router();
 
 // @route GET /api/publications
-// @desc Get all active publications
+// @desc Get all active publications with sorting and limit support
 // @access Public
 router.get("/", async (req, res) => {
   try {
-    // extract query parameters
-    const { year, type, author } = req.query;
+    // extract query parameters including new sortBy and limit
+    const { year, type, author, sortBy, limit } = req.query;
 
     // set the isActive property to true to the query object
     let query = { isActive: true };
+
     // add the year property with the query's value to the query object if provided
     if (year) query.year = parseInt(year);
+
     // add the type property with the query's value to the query object if provided
     if (type) query.type = type;
+
     // add the authors property with the query's value to the query object if provided
     if (author) {
       query.authors = { $regex: author, $options: "i" };
     }
 
-    // find all publications that match the provided query & sort them by creation date
-    const publications = await Publication.find(query)
+    // Build the sort object based on sortBy parameter
+    let sortObject = { year: -1, createdAt: -1 }; // default sort
+
+    if (sortBy) {
+      switch (sortBy) {
+        case "year-desc":
+          sortObject = { year: -1, createdAt: -1 };
+          break;
+        case "year-asc":
+          sortObject = { year: 1, createdAt: 1 };
+          break;
+        case "title-asc":
+          sortObject = { title: 1 };
+          break;
+        case "title-desc":
+          sortObject = { title: -1 };
+          break;
+        default:
+          // Keep default sort for invalid sortBy values
+          sortObject = { year: -1, createdAt: -1 };
+      }
+    }
+
+    // Build the query with population and sorting
+    let publicationsQuery = Publication.find(query)
       .populate("projects", "title category")
-      .sort({ year: -1, createdAt: -1 });
+      .sort(sortObject);
+
+    // Apply limit if provided (convert to number and ensure it's positive)
+    if (limit) {
+      const limitNum = parseInt(limit);
+      if (limitNum > 0) {
+        publicationsQuery = publicationsQuery.limit(limitNum);
+      }
+    }
+
+    // Execute the query
+    const publications = await publicationsQuery;
 
     // return the publications we have found to the response
     res.json(publications);
@@ -48,12 +85,12 @@ router.get("/:id", async (req, res) => {
       "title description category"
     );
 
-    // check if no publication with this id exists or the publication with this id is not active
+    // check if no publication with this id exists or the publication is not active
     if (!publication || !publication.isActive) {
       return res.status(404).json({ message: "Publication not found" });
     }
 
-    // return the publication found to the response
+    // return the publication we have found to the response
     res.json(publication);
   } catch (error) {
     console.error("Get publication error:", error);
@@ -69,35 +106,42 @@ router.post(
   [
     auth,
     authorize("admin", "editor"),
-    body("title").notEmpty().trim(),
-    body("authors").isArray({ min: 1 }),
-    body("year").isInt({ min: 1900, max: new Date().getFullYear() + 5 }),
-    body("type")
-      .optional()
-      .isIn(["journal", "conference", "book", "thesis", "preprint"]),
+    // Validation rules for publication creation
+    body("title").notEmpty().trim().withMessage("Title is required"),
+    body("authors").notEmpty().withMessage("Authors are required"),
+    body("year")
+      .isInt({ min: 1900, max: new Date().getFullYear() + 5 })
+      .withMessage("Year must be valid"),
+    body("publicationType")
+      .isIn([
+        "journal",
+        "conference",
+        "book-chapter",
+        "thesis",
+        "report",
+        "preprint",
+      ])
+      .withMessage("Invalid publication type"),
   ],
   async (req, res) => {
     try {
-      // check if errors have occured
+      // check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
 
-      // create new Publication instance with the data from the request's body
+      // create a new publication using the data from request's body
       const publication = new Publication(req.body);
-      // save the newly created publication to the database
       await publication.save();
 
-      // find the publication with the id with which it has been saved to the database & populate with the needed extra info
-      const populatedPublication = await Publication.findById(
-        publication._id
-      ).populate("projects", "title category");
+      // populate the publication before sending response
+      await publication.populate("projects", "title category");
 
-      // return success response & the newly created & populated publication
+      // return success response with the newly created publication
       res.status(201).json({
         message: "Publication created successfully",
-        publication: populatedPublication,
+        publication,
       });
     } catch (error) {
       console.error("Create publication error:", error);
@@ -116,7 +160,10 @@ router.put("/:id", [auth, authorize("admin", "editor")], async (req, res) => {
     const publication = await Publication.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true,
+      }
     ).populate("projects", "title category");
 
     // check if we have not found a publication with the provided id

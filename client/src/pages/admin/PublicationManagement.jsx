@@ -491,7 +491,7 @@ const PublicationManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditPublication(publication)}
-                      className="w-full"
+                      className="w-full text-purple-600"
                     >
                       Edit
                     </Button>
@@ -499,7 +499,11 @@ const PublicationManagement = () => {
                       variant={publication.isFeatured ? "solid" : "outline"}
                       size="sm"
                       onClick={() => handleToggleFeatured(publication)}
-                      className="w-full"
+                      className={`w-full ${
+                        publication.isFeatured
+                          ? "text-white"
+                          : "text-purple-600"
+                      }`}
                     >
                       {publication.isFeatured ? "★ Featured" : "☆ Feature"}
                     </Button>
@@ -731,6 +735,7 @@ const PublicationManagement = () => {
                 setEditingPublication(null);
               }}
               disabled={isSubmitting}
+              className="text-purple-600"
             >
               Cancel
             </Button>

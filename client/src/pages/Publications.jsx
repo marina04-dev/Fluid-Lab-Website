@@ -403,7 +403,7 @@ const Publications = () => {
                           href={`https://doi.org/${publication.doi}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn btn-outline text-center"
+                          className="btn btn-outline text-purple-600 text-center"
                         >
                           View on Publisher
                         </a>

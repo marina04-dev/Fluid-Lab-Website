@@ -1,12 +1,14 @@
-import React, { useEffect } from "react";
+// client/src/pages/Home.jsx - ΔΙΟΡΘΩΜΕΝΟ με consistent purple theme
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useContent } from "../contexts/ContentContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Card from "../components/common/Card";
-import Button from "../components/common/Button";
 
 const Home = () => {
-  // get necessary variables/functions from contexts
+  // Hooks
+  const { t } = useTranslation();
   const {
     getContent,
     fetchContent,
@@ -65,28 +67,24 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center gradient-bg overflow-hidden">
-        <div className="container-custom text-center text-white relative z-10">
-          <h1 className="text-6xl font-bold mb-6">
-            {getContent("hero-title", "Advanced Fluid Mechanics Research")}
+      {/* Hero Section με purple gradient */}
+      <section className="hero-section relative flex items-center justify-center text-center">
+        <div className="container-custom relative z-10">
+          <h1 className="text-hero font-bold text-white mb-8 animate-fade-in-up">
+            {getContent("hero-title", "Advanced Research in Fluid Dynamics")}
           </h1>
-          <p className="text-2xl mb-8 opacity-90">
+          <p className="text-subtitle text-white/90 mb-12 max-w-4xl mx-auto animate-fade-in-up animation-delay-200">
             {getContent(
               "hero-subtitle",
-              "Leading the Future of Fluid Dynamics"
+              "Pioneering innovative solutions through cutting-edge computational and experimental fluid mechanics research"
             )}
           </p>
-          <p className="text-xl mb-12 max-w-4xl mx-auto opacity-80">
-            {getContent(
-              "hero-description",
-              "Our research team offers efficient research and consulting services in many aspects of Fluid Flow, Hydraulics and Convective Heat Transfer."
-            )}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
+            {/* Primary CTA - χρησιμοποιεί τα νέα button styles */}
             <Link to="/projects" className="btn btn-primary btn-lg">
               {getContent("hero-cta-primary", "Explore Our Research")}
             </Link>
+            {/* Secondary CTA - τώρα θα δουλέψει το btn-outline! */}
             <Link to="/contact" className="btn btn-outline btn-lg">
               {getContent("hero-cta-secondary", "Get In Touch")}
             </Link>
@@ -111,7 +109,7 @@ const Home = () => {
                 </div>
                 <button
                   onClick={clearError}
-                  className="ml-auto text-red-600 hover:text-red-800"
+                  className="ml-auto text-red-600 hover:text-red-800 transition-colors duration-200"
                 >
                   ×
                 </button>
@@ -125,7 +123,7 @@ const Home = () => {
       <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="animate-fade-in-left">
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 {getContent("home-about-title", "About Our Laboratory")}
               </h2>
@@ -143,12 +141,14 @@ const Home = () => {
                   )}
                 </p>
               </div>
+              {/* Χρησιμοποιεί το νέο purple button theme */}
               <Link to="/about" className="btn btn-primary">
                 {getContent("home-about-cta", "Learn More About Us")}
               </Link>
             </div>
-            <div>
-              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xl font-semibold shadow-lg">
+            <div className="animate-fade-in-right">
+              {/* Διορθωμένο gradient με καλύτερη purple consistency */}
+              <div className="aspect-video gradient-bg rounded-lg flex items-center justify-center text-white text-xl font-semibold shadow-lg">
                 {getContent(
                   "home-about-image-placeholder",
                   "Laboratory Overview"
@@ -179,70 +179,67 @@ const Home = () => {
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" text="Loading projects..." />
+              <LoadingSpinner
+                size="lg"
+                text="Loading projects..."
+                color="purple"
+              />
             </div>
           ) : featuredProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {featuredProjects.map((project) => (
-                <Card key={project._id} hover>
+              {featuredProjects.map((project, index) => (
+                <Card
+                  key={project._id}
+                  hover
+                  className={`animate-fade-in-up animation-delay-${
+                    200 * (index + 1)
+                  }`}
+                >
                   {/* Project Image */}
                   {project.images && project.images.length > 0 ? (
-                    <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 overflow-hidden">
+                    <div className="aspect-video mb-6 rounded-lg overflow-hidden">
                       <img
-                        src={project.images[0].url || project.images[0]}
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.parentElement.className =
-                            "aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 flex items-center justify-center";
-                          e.target.parentElement.innerHTML =
-                            '<span class="text-white font-semibold">Project Image</span>';
-                        }}
+                        src={project.images[0].url}
+                        alt={project.images[0].alt || project.title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                   ) : (
-                    <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mb-6 flex items-center justify-center">
-                      <span className="text-white font-semibold">
-                        Project Image
-                      </span>
+                    <div className="aspect-video mb-6 gradient-bg rounded-lg flex items-center justify-center text-white font-semibold">
+                      {project.title}
                     </div>
                   )}
 
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {/* Project Content */}
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      {project.title}
+                    </h3>
+
+                    {project.description && (
+                      <p className="text-gray-600 mb-4">
+                        {truncateText(project.description, 120)}
+                      </p>
+                    )}
+
+                    {/* Project Status με purple badge */}
+                    {project.status && (
+                      <div className="mb-4">
+                        <span className="badge badge-purple text-xs">
+                          {project.status
+                            .replace(/-/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* CTA Link */}
                     <Link
                       to={`/projects/${project._id}`}
-                      className="hover:text-blue-600 transition-colors"
+                      className="btn btn-outline text-sm"
                     >
-                      {project.title}
+                      Learn More
                     </Link>
-                  </h3>
-
-                  <p className="text-gray-600 mb-4">
-                    {truncateText(
-                      project.shortDescription || project.description
-                    )}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {project.status && (
-                      <span className="badge badge-blue">
-                        {project.status.charAt(0).toUpperCase() +
-                          project.status.slice(1)}
-                      </span>
-                    )}
-                    {project.category && (
-                      <span className="badge badge-purple">
-                        {project.category
-                          .replace(/-/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </span>
-                    )}
-                    {project.tags && project.tags.length > 0 && (
-                      <span className="badge badge-green">
-                        {project.tags[0]}
-                      </span>
-                    )}
                   </div>
                 </Card>
               ))}
@@ -251,7 +248,7 @@ const Home = () => {
             <div className="text-center py-12">
               <p className="text-gray-600 mb-6">
                 {getContent(
-                  "home-no-featured-projects",
+                  "home-no-projects",
                   "Featured projects will be displayed here once available."
                 )}
               </p>
@@ -266,72 +263,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Research Areas Section */}
-      <section className="section-padding bg-white">
-        <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              {getContent("home-research-areas-title", "Research Areas")}
-            </h2>
-            <p className="text-subtitle text-gray-600 max-w-3xl mx-auto">
-              {getContent(
-                "home-research-areas-subtitle",
-                "Our expertise spans multiple domains of fluid mechanics and related fields"
-              )}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card hover>
-              <div className="text-center">
-                <div className="text-4xl mb-4">⚡</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {getContent("home-area1-title", "Magnetohydrodynamics")}
-                </h3>
-                <p className="text-gray-600">
-                  {getContent(
-                    "home-area1-description",
-                    "Advanced study of electrically conducting fluids in magnetic fields"
-                  )}
-                </p>
-              </div>
-            </Card>
-
-            <Card hover>
-              <div className="text-center">
-                <div className="text-4xl mb-4">🔧</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {getContent("home-area2-title", "Turbomachinery")}
-                </h3>
-                <p className="text-gray-600">
-                  {getContent(
-                    "home-area2-description",
-                    "Optimization of rotating machinery and fluid energy conversion systems"
-                  )}
-                </p>
-              </div>
-            </Card>
-
-            <Card hover>
-              <div className="text-center">
-                <div className="text-4xl mb-4">🌡️</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {getContent("home-area3-title", "Heat Transfer")}
-                </h3>
-                <p className="text-gray-600">
-                  {getContent(
-                    "home-area3-description",
-                    "Thermal analysis and heat exchange in complex flow systems"
-                  )}
-                </p>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* Recent Publications Section */}
-      <section className="section-padding bg-gray-50">
+      <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
@@ -343,45 +276,61 @@ const Home = () => {
             <p className="text-subtitle text-gray-600 max-w-3xl mx-auto">
               {getContent(
                 "home-recent-publications-subtitle",
-                "Latest research findings and academic contributions"
+                "Stay updated with our latest research findings and scientific contributions"
               )}
             </p>
           </div>
 
           {loading ? (
             <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" text="Loading publications..." />
+              <LoadingSpinner
+                size="lg"
+                text="Loading publications..."
+                color="purple"
+              />
             </div>
           ) : recentPublications.length > 0 ? (
             <div className="space-y-6 mb-12">
-              {recentPublications.map((publication) => (
-                <Card key={publication._id} hover>
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+              {recentPublications.map((publication, index) => (
+                <Card
+                  key={publication._id}
+                  hover
+                  className={`animate-fade-in-up animation-delay-${
+                    200 * (index + 1)
+                  }`}
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
                         <Link
                           to={`/publications/${publication._id}`}
-                          className="hover:text-blue-600 transition-colors"
+                          className="hover:text-purple-600 transition-colors duration-200"
                         >
                           {publication.title}
                         </Link>
                       </h3>
 
-                      <p className="text-gray-700 font-medium mb-2">
-                        {formatAuthors(publication.authors)}
-                      </p>
-
-                      <div className="text-sm text-gray-600 mb-3">
-                        {publication.journal && (
-                          <span>
-                            <strong>{publication.journal}</strong>
-                            {publication.year && ` • ${publication.year}`}
-                            {publication.volume &&
-                              ` • Vol. ${publication.volume}`}
-                          </span>
+                      {/* Authors */}
+                      {publication.authors &&
+                        publication.authors.length > 0 && (
+                          <p className="text-gray-600 mb-2">
+                            {publication.authors.join(", ")}
+                          </p>
                         )}
-                      </div>
 
+                      {/* Journal/Conference Info */}
+                      {(publication.journal || publication.conference) && (
+                        <div className="text-sm text-gray-500 mb-2">
+                          <span className="font-medium">
+                            {publication.journal || publication.conference}
+                          </span>
+                          {publication.volume && `, Vol. ${publication.volume}`}
+                          {publication.volume && publication.issue && ", "}
+                          {publication.issue && `Issue ${publication.issue}`}
+                        </div>
+                      )}
+
+                      {/* Abstract */}
                       {publication.abstract && (
                         <p className="text-gray-600">
                           {truncateText(publication.abstract, 150)}
@@ -390,13 +339,15 @@ const Home = () => {
                     </div>
 
                     <div className="flex flex-col gap-2 lg:w-32">
+                      {/* Publication Type Badge */}
                       {publication.publicationType && (
-                        <span className="badge badge-blue text-xs">
+                        <span className="badge badge-purple text-xs">
                           {publication.publicationType
                             .replace(/-/g, " ")
                             .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </span>
                       )}
+                      {/* Year Badge */}
                       {publication.year && (
                         <span className="badge badge-gray text-xs">
                           {publication.year}
@@ -429,8 +380,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Contact CTA Section */}
-      <section className="section-padding bg-blue-600">
+      {/* Contact CTA Section - ΔΙΟΡΘΩΜΕΝΟ με purple theme */}
+      <section className="section-padding gradient-bg">
         <div className="container-custom">
           <div className="text-center text-white">
             <h2 className="text-3xl font-bold mb-6">
@@ -442,9 +393,10 @@ const Home = () => {
                 "Contact us to discuss research opportunities, partnerships, or consulting services"
               )}
             </p>
+            {/* ΔΙΟΡΘΩΣΗ: Χρησιμοποιεί consistent purple styling */}
             <Link
               to="/contact"
-              className="btn btn-primary btn-lg bg-white text-blue-600 hover:bg-gray-100"
+              className="btn btn-secondary btn-lg text-purple-700 bg-white hover:bg-gray-100"
             >
               {getContent("home-cta-button", "Get In Touch")}
             </Link>

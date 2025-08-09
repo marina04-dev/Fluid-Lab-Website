@@ -1,19 +1,19 @@
-// client/src/components/layout/Navbar.jsx - UPDATED με react-i18next
+// client/src/components/layout/Navbar.jsx - ΔΙΟΡΘΩΜΕΝΟ με purple theme
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Navbar = () => {
-  // state variables to handle menu display
+  // State variables to handle menu display
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // state variables to handle web page scroll
+  // State variables to handle web page scroll
   const [isScrolled, setIsScrolled] = useState(false);
-  // get necessary variables/functions from AuthContext
+  // Get necessary variables/functions from AuthContext
   const { user, logout } = useAuth();
-  // get necessary variables for translation
+  // Get necessary variables for translation
   const { t, i18n } = useTranslation();
-  // get path from useLocation
+  // Get path from useLocation
   const location = useLocation();
 
   // Determine if we're on homepage and should use transparent navbar initially
@@ -26,7 +26,7 @@ const Navbar = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
-    // check if it the user is in the home page
+    // Check if it the user is in the home page
     if (isHomePage) {
       window.addEventListener("scroll", handleScroll);
       return () => window.removeEventListener("scroll", handleScroll);
@@ -41,7 +41,7 @@ const Navbar = () => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
-  // navigation paths and translation if needed
+  // Navigation paths and translation if needed
   const navigation = [
     { name: t("nav.home"), href: "/" },
     { name: t("nav.about"), href: "/about" },
@@ -51,7 +51,7 @@ const Navbar = () => {
     { name: t("nav.contact"), href: "/contact" },
   ];
 
-  // check the active path
+  // Check the active path
   const isActivePath = (path) => {
     if (path === "/") {
       return location.pathname === "/";
@@ -79,7 +79,7 @@ const Navbar = () => {
   const textColor = shouldBeTransparent ? "text-white" : "text-gray-700";
   const hoverColor = shouldBeTransparent
     ? "hover:text-blue-200"
-    : "hover:text-blue-600";
+    : "hover:text-purple-600"; // ΔΙΟΡΘΩΣΗ: Purple hover
 
   // Special styling for admin pages
   if (isAdminPage) {
@@ -87,12 +87,12 @@ const Navbar = () => {
       <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md shadow-lg">
         <div className="container-custom">
           <div className="flex items-center justify-between h-16">
-            {/* Logo for admin */}
+            {/* Logo for admin με purple gradient */}
             <Link
               to="/"
               className="flex items-center space-x-2 text-xl font-bold text-gray-900"
             >
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">FL</span>
               </div>
               <span>Fluid Lab Admin</span>
@@ -126,12 +126,12 @@ const Navbar = () => {
     >
       <div className="container-custom">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo με purple gradient */}
           <Link
             to="/"
             className={`flex items-center space-x-2 text-xl font-bold transition-colors duration-200 ${textColor}`}
           >
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">FL</span>
             </div>
             <span>Fluid Lab</span>
@@ -145,7 +145,9 @@ const Navbar = () => {
                 to={item.href}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   isActivePath(item.href)
-                    ? "text-blue-600"
+                    ? shouldBeTransparent
+                      ? "text-white font-semibold"
+                      : "text-purple-600 font-semibold" // ΔΙΟΡΘΩΣΗ: Purple active
                     : `${textColor} ${hoverColor}`
                 }`}
               >
@@ -153,56 +155,39 @@ const Navbar = () => {
               </Link>
             ))}
 
+            {/* User actions for logged in users */}
+            {user && (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/admin"
+                  className={`text-sm font-medium transition-colors duration-200 ${textColor} ${hoverColor}`}
+                >
+                  {t("nav.dashboard")}
+                </Link>
+                <button
+                  onClick={logout}
+                  className={`text-sm font-medium transition-colors duration-200 ${textColor} hover:text-red-500`}
+                >
+                  {t("nav.logout")}
+                </button>
+              </div>
+            )}
+
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
-              className={`inline-flex items-center px-3 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${textColor} ${hoverColor} border border-current border-opacity-20 hover:border-opacity-40`}
+              className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors duration-200 ${
+                shouldBeTransparent
+                  ? "border-white/30 text-white hover:bg-white/10"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
+              }`}
             >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                />
-              </svg>
-              {getCurrentLanguageLabel()}
+              <span className="text-xs">{i18n.language.toUpperCase()}</span>
             </button>
-
-            {/* Admin Link - Only show for authenticated users */}
-            {user && (
-              <div className="relative group">
-                <button
-                  className={`text-sm font-medium transition-colors duration-200 ${textColor}`}
-                >
-                  {t("nav.admin")}
-                </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <Link
-                    to="/admin"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    {t("nav.dashboard")}
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    {t("nav.logout")}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            {/* Mobile Language Switcher */}
             <button
               onClick={toggleLanguage}
               className={`p-2 rounded-lg transition-colors duration-200 ${textColor} ${
@@ -244,7 +229,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation με ΔΙΟΡΘΩΜΕΝΟ purple theme */}
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg mt-2">
@@ -254,8 +239,8 @@ const Navbar = () => {
                   to={item.href}
                   className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors duration-200 ${
                     isActivePath(item.href)
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                      ? "text-purple-600 bg-purple-50" // ΔΙΟΡΘΩΣΗ: Purple active
+                      : "text-gray-700 hover:text-purple-600 hover:bg-gray-50" // ΔΙΟΡΘΩΣΗ: Purple hover
                   }`}
                 >
                   {item.name}
@@ -266,13 +251,13 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/admin"
-                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-purple-600 hover:bg-gray-50 rounded-lg"
                   >
                     {t("nav.dashboard")}
                   </Link>
                   <button
                     onClick={logout}
-                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg"
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50 rounded-lg"
                   >
                     {t("nav.logout")}
                   </button>

@@ -1,112 +1,100 @@
-import React, { useState, useEffect } from "react";
+// client/src/pages/Contact.jsx - ΔΙΟΡΘΩΜΕΝΟ με consistent purple theme
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useContent } from "../contexts/ContentContext";
-import api from "../services/api";
+import Card from "../components/common/Card";
 import Button from "../components/common/Button";
 import Input from "../components/common/Input";
-import Card from "../components/common/Card";
-import LoadingSpinner from "../components/common/LoadingSpinner";
-import toast from "react-hot-toast";
 
 const Contact = () => {
-  // get necessary variables/functions from contexts for dynamic content
-  const { getContent, fetchContent, loading, error, clearError } = useContent();
-
-  // state variables to handle form inputs
+  // States
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: "",
   });
-  // state variables to handle form submission
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+  const [error, setError] = useState(null);
 
-  // Load content on component mount
-  useEffect(() => {
-    fetchContent();
-  }, [fetchContent]);
+  // Hooks
+  const { t } = useTranslation();
+  const { getContent } = useContent();
 
-  // Clear any existing errors on component mount
-  useEffect(() => {
-    clearError();
-  }, [clearError]);
+  // Clear error function
+  const clearError = () => setError(null);
 
-  // function to handle inputs changes
+  // Form handlers
   const handleChange = (e) => {
-    // get the name and the value from the event
     const { name, value } = e.target;
-    // provide the data in the setter function
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // function to handle form submission with real API call
   const handleSubmit = async (e) => {
-    // prevent default browser's behaviour from reloading the page
     e.preventDefault();
-
-    // Basic form validation
-    if (!formData.name.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
-
-    if (!formData.email.trim()) {
-      toast.error("Please enter your email");
-      return;
-    }
-
-    if (!formData.subject.trim()) {
-      toast.error("Please enter a subject");
-      return;
-    }
-
-    if (!formData.message.trim()) {
-      toast.error("Please enter your message");
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
     setIsSubmitting(true);
+    setSubmitMessage("");
 
     try {
-      // Make API call to send contact message
-      const response = await api.post("/contact", formData);
-
-      toast.success(
-        response.data.message ||
-          "Message sent successfully! We will get back to you soon."
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
       );
 
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-      });
-    } catch (error) {
-      console.error("Contact form error:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.errors?.[0]?.msg ||
-        "Failed to send message. Please try again.";
-      toast.error(errorMessage);
+      if (response.ok) {
+        setSubmitMessage(
+          getContent(
+            "contact-success-message",
+            "Thank you for your message! We'll get back to you soon."
+          )
+        );
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      } else {
+        throw new Error("Failed to send message");
+      }
+    } catch (err) {
+      console.error("Contact form error:", err);
+      setError(
+        getContent(
+          "contact-error-message",
+          "There was an error sending your message. Please try again."
+        )
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // contact info using dynamic content with fallbacks
+  // Contact information με purple theme
   const contactInfo = [
+    {
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+      title: getContent("contact-email-title", "Email"),
+      content: getContent("contact-email", "contact@fluidlab.university.edu"),
+      link: `mailto:${getContent(
+        "contact-email",
+        "contact@fluidlab.university.edu"
+      )}`,
+    },
     {
       icon: (
         <svg
@@ -132,29 +120,27 @@ const Contact = () => {
       title: getContent("contact-address-title", "Address"),
       content: getContent(
         "contact-address",
-        "University Campus\nAthens, Greece"
+        "Fluid Dynamics Laboratory\nEngineering Department\nUniversity Campus\nAthens, Greece"
       ),
       multiline: true,
     },
     {
       icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-          />
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 2l8 4-8 4-8-4 8-4zm0 8.5l-6-3v4c0 2.5 2.5 4.5 6 4.5s6-2 6-4.5v-4l-6 3z" />
         </svg>
       ),
-      title: getContent("contact-email-title", "Email"),
-      content: getContent("contact-email", "info@fluidlab.com"),
-      link: `mailto:${getContent("contact-email", "info@fluidlab.com")}`,
+      title: getContent("contact-department-title", "Department"),
+      content: getContent("contact-department", "Engineering Sciences"),
+    },
+    {
+      icon: (
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 2l8 4-8 4-8-4 8-4zm0 8.5l-6-3v4c0 2.5 2.5 4.5 6 4.5s6-2 6-4.5v-4l-6 3z" />
+        </svg>
+      ),
+      title: getContent("contact-university-title", "University"),
+      content: getContent("contact-university", "Technical University"),
     },
     {
       icon: (
@@ -199,7 +185,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Header Section */}
+      {/* Header Section με purple gradient */}
       <section className="pt-24 pb-16 gradient-bg">
         <div className="container-custom">
           <div className="text-center text-white">
@@ -227,7 +213,28 @@ const Contact = () => {
                 </div>
                 <button
                   onClick={clearError}
-                  className="ml-auto text-red-600 hover:text-red-800"
+                  className="ml-auto text-red-600 hover:text-red-800 transition-colors duration-200"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Success Message Display */}
+      {submitMessage && (
+        <section className="section-padding">
+          <div className="container-custom">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+              <div className="flex items-center">
+                <div className="text-green-800">
+                  <strong>Success:</strong> {submitMessage}
+                </div>
+                <button
+                  onClick={() => setSubmitMessage("")}
+                  className="ml-auto text-green-600 hover:text-green-800 transition-colors duration-200"
                 >
                   ×
                 </button>
@@ -256,7 +263,8 @@ const Contact = () => {
               <div className="space-y-8">
                 {contactInfo.map((info, index) => (
                   <div key={index} className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                    {/* ΔΙΟΡΘΩΣΗ: Purple theme για contact info icons */}
+                    <div className="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
                       {info.icon}
                     </div>
                     <div>
@@ -266,7 +274,7 @@ const Contact = () => {
                       {info.link ? (
                         <a
                           href={info.link}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                          className="text-purple-600 hover:text-purple-800 transition-colors duration-200"
                         >
                           {info.content}
                         </a>
@@ -284,13 +292,13 @@ const Contact = () => {
                 ))}
               </div>
 
-              {/* Map Placeholder */}
+              {/* Map Placeholder με διορθωμένο gradient */}
               <div className="mt-12">
                 <h3 className="text-xl font-semibold text-gray-900 mb-6">
                   {getContent("contact-location-title", "Our Location")}
                 </h3>
                 <Card>
-                  <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xl font-semibold">
+                  <div className="aspect-video gradient-bg rounded-lg flex items-center justify-center text-white text-xl font-semibold">
                     {getContent("contact-map-placeholder", "Interactive Map")}
                   </div>
                   <div className="mt-4 text-center text-sm text-gray-600">
@@ -341,31 +349,37 @@ const Contact = () => {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    placeholder="Brief description of your inquiry"
+                    placeholder="What's this about?"
                   />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="message"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Message *
                     </label>
                     <textarea
+                      id="message"
                       name="message"
                       rows={6}
                       value={formData.message}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-500 resize-vertical"
-                      placeholder="Please provide details about your inquiry, research interests, or collaboration ideas..."
+                      className="input-field resize-none"
+                      placeholder="Tell us about your inquiry, research interests, or collaboration ideas..."
                     />
                   </div>
 
+                  {/* Submit Button με purple theme */}
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="w-full flex items-center justify-center space-x-2"
+                    variant="primary"
                     size="lg"
+                    disabled={isSubmitting}
+                    loading={isSubmitting}
+                    className="w-full"
                   >
-                    {isSubmitting && <LoadingSpinner size="sm" />}
                     <span>{isSubmitting ? "Sending..." : "Send Message"}</span>
                   </Button>
                 </form>
@@ -401,10 +415,10 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Additional Information */}
+      {/* Additional Information Section με purple theme */}
       <section className="section-padding bg-gray-50">
         <div className="container-custom">
-          <Card className="p-8 text-center bg-gradient-to-r from-blue-50 to-purple-50">
+          <Card className="p-8 text-center bg-gradient-to-r from-purple-50 to-blue-50">
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
               {getContent(
                 "contact-collaboration-title",
@@ -418,7 +432,8 @@ const Contact = () => {
               )}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              {/* ΔΙΟΡΘΩΣΗ: Purple buttons αντί για blue */}
+              <Button variant="primary" size="lg">
                 {getContent(
                   "contact-partnerships-button",
                   "Research Partnerships"
@@ -426,7 +441,8 @@ const Contact = () => {
               </Button>
               <Button
                 variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                size="lg"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
               >
                 {getContent("contact-consulting-button", "Consulting Services")}
               </Button>

@@ -273,7 +273,7 @@ const About = () => {
             {/* Vision Points */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                   1
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -288,7 +288,7 @@ const About = () => {
               </div>
 
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                   2
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -322,7 +322,7 @@ const About = () => {
       </section>
 
       {/* Contact CTA Section */}
-      <section className="section-padding bg-blue-600">
+      <section className="section-padding bg-purple-600">
         <div className="container-custom">
           <div className="text-center text-white">
             <h2 className="text-3xl font-bold mb-6">
@@ -336,7 +336,7 @@ const About = () => {
             </p>
             <a
               href="/contact"
-              className="inline-block bg-white text-blue-600 font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+              className="inline-block bg-white text-purple-600 font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors"
             >
               {getContent("about-cta-button", "Contact Us")}
             </a>

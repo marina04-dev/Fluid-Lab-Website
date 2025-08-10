@@ -233,7 +233,7 @@ const Footer = () => {
             </Link>
             <Link
               to="/admin/login"
-              className="text-gray-300 hover:text-white text-sm transition-colors duration-200"
+              className="text-gray-300 hover:text-white text-xs transition-colors duration-200"
             >
               Admin
             </Link>

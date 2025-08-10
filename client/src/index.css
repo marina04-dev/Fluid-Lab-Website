@@ -3,6 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
+::-webkit-scrollbar {
+  display: none;
+}
+
 /* Ορισμός custom purple colors για consistency */
 @theme {
   --color-purple-primary: #764ba2;

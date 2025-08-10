@@ -261,6 +261,7 @@ const Publications = () => {
                       setSelectedYear("all");
                     }}
                     variant="outline"
+                    className="text-purple-600"
                   >
                     Clear Filters
                   </Button>

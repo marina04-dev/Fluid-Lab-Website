@@ -1,25 +1,28 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const publicationSchema = new mongoose.Schema({
+const publicationSchema = new mongoose.Schema(
+  {
     title: {
-        type: String,
-        required: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
-    authors: [{
+    authors: [
+      {
         type: String,
         required: true,
-        trim: true
-    }],
+        trim: true,
+      },
+    ],
     journal: {
-        type: String,
-        trim: true
+      type: String,
+      trim: true,
     },
     year: {
-        type: Number,
-        required: true,
-        min: 1900,
-        max: new Date().getFullYear() + 5
+      type: Number,
+      required: true,
+      min: 1900,
+      max: new Date().getFullYear() + 5,
     },
     volume: String,
     issue: String,
@@ -28,22 +31,32 @@ const publicationSchema = new mongoose.Schema({
     url: String,
     abstract: String,
     type: {
-        type: String,
-        enum: ['journal', 'conference', 'book', 'thesis', 'preprint'],
-        default: 'journal'
+      type: String,
+      enum: ["journal", "conference", "book", "thesis", "preprint"],
+      default: "journal",
     },
-    tags: [{
+    tags: [
+      {
         type: String,
-        trim: true
-    }],
-    projects: [{
+        trim: true,
+      },
+    ],
+    projects: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Project'
-    }],
+        ref: "Project",
+      },
+    ],
     isActive: {
-        type: Boolean,
-        default: true
-    }
-}, { timestamps: true });
+      type: Boolean,
+      default: true,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('Publication', publicationSchema);
+module.exports = mongoose.model("Publication", publicationSchema);

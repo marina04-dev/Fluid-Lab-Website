@@ -323,7 +323,7 @@ const Contact = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                      label="Full Name *"
+                      label="Full Name"
                       name="name"
                       type="text"
                       value={formData.name}
@@ -332,7 +332,7 @@ const Contact = () => {
                       placeholder="Your full name"
                     />
                     <Input
-                      label="Email Address *"
+                      label="Email Address"
                       name="email"
                       type="email"
                       value={formData.email}
@@ -343,7 +343,7 @@ const Contact = () => {
                   </div>
 
                   <Input
-                    label="Subject *"
+                    label="Subject"
                     name="subject"
                     type="text"
                     value={formData.subject}
@@ -357,7 +357,7 @@ const Contact = () => {
                       htmlFor="message"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
-                      Message *
+                      Message <span className="text-red-600">*</span>
                     </label>
                     <textarea
                       id="message"

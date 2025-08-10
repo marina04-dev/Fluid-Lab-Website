@@ -47,6 +47,9 @@ const PublicationManagement = () => {
   });
   // state variable to track submitting status
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Προσθήκη useState για τα φίλτρα
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
 
   // publication types options
   const publicationTypes = [
@@ -291,6 +294,19 @@ const PublicationManagement = () => {
       : "Unknown";
   };
 
+  // Χρησιμοποιούμε useEffect για να καλούμε το fetchPublications όταν αλλάζουν τα φίλτρα
+  useEffect(() => {
+    const filters = {};
+    if (filterType !== "all") {
+      filters.publicationType = filterType;
+    }
+    if (searchTerm) {
+      filters.search = searchTerm;
+    }
+
+    fetchPublications(filters);
+  }, [fetchPublications, filterType, searchTerm]);
+
   // if publications management page is slow display loading
   if (loading) {
     return (
@@ -323,6 +339,41 @@ const PublicationManagement = () => {
             <span>+</span>
             <span>Add Publication</span>
           </Button>
+        </div>
+
+        {/* ΕΔΩ θα εισάγεις το νέο div για τα φίλτρα */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Filter by Type */}
+            <div>
+              <label
+                htmlFor="filterType"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Filter by Type
+              </label>
+              <select
+                id="filterType"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Types</option>
+                {publicationTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {getTypeDisplayName(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Search Input */}
+            <Input
+              label="Search Publications"
+              placeholder="Search by title, author, or keywords..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Error Display */}

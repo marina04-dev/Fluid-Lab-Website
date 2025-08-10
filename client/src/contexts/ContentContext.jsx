@@ -233,13 +233,20 @@ export function ContentProvider({ children }) {
     [handleError]
   );
 
-  // Fetch publications
   const fetchPublications = useCallback(
     async (filters = {}) => {
       dispatch({ type: ContentActionTypes.SET_LOADING, payload: true });
 
+      // Δέχεται και το search term
+      const { search, publicationType } = filters;
+
       try {
-        const response = await api.get("/publications", { params: filters });
+        const response = await api.get("/publications", {
+          params: {
+            search,
+            type: publicationType,
+          },
+        });
         dispatch({
           type: ContentActionTypes.SET_PUBLICATIONS,
           payload: response.data,

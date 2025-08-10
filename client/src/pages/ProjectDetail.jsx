@@ -380,7 +380,7 @@ const ProjectDetail = () => {
                   <div className="space-y-3">
                     <Link
                       to="/projects"
-                      className="w-full btn btn-outline text-center block"
+                      className="w-full btn btn-outline text-center block text-purple-600"
                     >
                       ← Back to All Projects
                     </Link>

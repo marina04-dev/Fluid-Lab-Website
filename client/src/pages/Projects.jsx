@@ -201,6 +201,7 @@ const Projects = () => {
                       setSelectedStatus("all");
                     }}
                     variant="outline"
+                    className="text-purple-600"
                   >
                     Clear Filters
                   </Button>
